@@ -21,3 +21,7 @@ h1, h2{
 a:link{
     color: lightgrey;
 }
+
+a:visited{
+    color: #c9c9c9;
+}
