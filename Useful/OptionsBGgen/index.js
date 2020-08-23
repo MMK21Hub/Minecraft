@@ -1,4 +1,4 @@
-function loadFile(filePath) {
+function loadFile(filePath) { // https://stackoverflow.com/a/41133213/11519302
     var result = null;
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", filePath, false);
