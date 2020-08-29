@@ -11,11 +11,16 @@ function loadFile(filePath) { // https://stackoverflow.com/a/41133213/11519302
 }
 
 commitsList = JSON.parse(loadFile("https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits"))
-latestCommit = loadFile(commitsList[0].url)
-remoteControl = latestCommit.files
-console.log(remoteControl)
-/*if (remoteControl.run == true) {
+latestCommit = JSON.parse(loadFile(commitsList[0].url))
+remoteControl = latestCommit.files["remoteControl.json"].content
+remoteControl = JSON.parse(remoteControl)
+downMsg = remoteControl.downMsg
+if (downMsg == undefined) {
+    downMsg = ""
+}
+console.log(downMsg)
+if (remoteControl.run == true) {
     console.log("run")
 } else{
-    document.getElementById("body").innerHTML("<p>Hello</p>")
-}*/
+    document.getElementById("body").innerHTML = "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>"+downMsg+"</em></small></p>";
+}
