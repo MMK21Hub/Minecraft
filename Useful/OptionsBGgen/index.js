@@ -20,7 +20,7 @@ if (downMsg == undefined) {
 }
 console.log(downMsg)
 if (remoteControl.run == true) {
-    console.log("run")
+    console.log("Remote Control OK!")
 } else{
     document.getElementById("body").innerHTML = "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>"+downMsg+"</em></small></p>";
 }
