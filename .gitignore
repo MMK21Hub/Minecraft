@@ -7,3 +7,8 @@
 
 # Local History for Visual Studio Code
 .history/
+
+# ESLint
+.eslintrc.json
+node_modules/
+package-lock.json
