@@ -35,6 +35,27 @@ function getRemoteControl() {
     return JSON.parse(rawContent);
 }
 
+function main() {
+    const remoteControl = getRemoteControl();
+    const downMsg = remoteControl.downMsg || "";
+
+    // Don't run the app if the site is disabled. Instead, show an error message.
+    if (!remoteControl.run) {
+        document.getElementById("body").innerHTML = "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>"+downMsg+"</em></small></p>";
+        return
+    }
+
+    // Get version manifest
+    versionManifest = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
+    console.log(versionManifest.latest.snapshot);
+
+    branches = JSON.parse(loadFile(Endpoints.MINECRAFT_ASSETS_BRANCHES));
+    console.log(branches);
+
+    var i;
+    branches.forEach(checkBranches);
+}
+
 /** @enum {string} */
 const Endpoints = {
     REMOTE_CONTROL_COMMITS:
@@ -45,30 +66,4 @@ const Endpoints = {
         "https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3",
 };
 
-const remoteControl = getRemoteControl();
-const downMsg = remoteControl.downMsg || "";
-
-
-// Only proceed if site is not disabled
-if (remoteControl.run == true) {
-    console.log("Remote Control OK!");
-    
-    // Get version manifest
-    versionManifest = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
-    console.log(versionManifest.latest.snapshot);
-
-    branches = JSON.parse(loadFile(Endpoints.MINECRAFT_ASSETS_BRANCHES));
-    console.log(branches);
-
-    var i;
-    branches.forEach(checkBranches);
-
-} else{
-    document.getElementById("body").innerHTML = "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>"+downMsg+"</em></small></p>";
-}
-
-function readValue() {
-    var blocks = document.getElementById("blocks");
-    var selectedBlock = blocks.value;
-    console.log(selectedBlock);
-}
+main()
