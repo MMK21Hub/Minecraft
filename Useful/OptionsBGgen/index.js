@@ -1,3 +1,12 @@
+/**
+ * A utility for asynchronously fetching JSON data
+ * @param {string} url 
+ * @param {RequestInit} [options]
+ */
+function fetchJSON(url, options) {
+    return fetch(url.toString(), options).then(res=>res.json())
+}
+
 /** Utility function that uses the CORS Everywhere service to access a URL without CORS errors
  * @param {string} url
  */
@@ -26,17 +35,17 @@ function checkBranches(value){
 }
 
 /** Fetches the data from the site's remote control gist
- * @returns {{run: boolean, downMsg: string}}
+ * @returns {Promise<{run: boolean, downMsg: string}>}
  */
-function getRemoteControl() {
-    const commitList = JSON.parse(loadFile(Endpoints.REMOTE_CONTROL_COMMITS));
-    const latestCommit = JSON.parse(loadFile(commitList[0].url));
+async function getRemoteControl() {
+    const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS)
+    const latestCommit = await fetchJSON(commitList[0].url)
     const rawContent = latestCommit.files["remoteControl.json"].content;
     return JSON.parse(rawContent);
 }
 
-function main() {
-    const remoteControl = getRemoteControl();
+async function main() {
+    const remoteControl = await getRemoteControl();
     const downMsg = remoteControl.downMsg || "";
 
     // Don't run the app if the site is disabled. Instead, show an error message.
