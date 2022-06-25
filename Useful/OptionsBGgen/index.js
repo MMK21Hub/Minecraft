@@ -27,13 +27,6 @@ function loadFile(filePath) {
     return result;
 }
 
-function checkBranches(value){
-    console.log(value.name);
-    if (value.name == versionManifest.latest.snapshot){
-        console.log(true);
-    }
-}
-
 /** Fetches the data from the site's remote control gist
  * @returns {Promise<{run: boolean, downMsg: string}>}
  */
@@ -54,15 +47,14 @@ async function main() {
         return
     }
 
-    // Get version manifest
-    versionManifest = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
-    console.log(versionManifest.latest.snapshot);
+    const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
+    console.log("Latest MC version", versionManifest.latest.snapshot);
 
-    branches = JSON.parse(loadFile(Endpoints.MINECRAFT_ASSETS_BRANCHES));
-    console.log(branches);
+    const branches = await fetchJSON(Endpoints.MINECRAFT_ASSETS_BRANCHES);
+    console.log("minecraft-assets branches", branches);
 
-    var i;
-    branches.forEach(checkBranches);
+    const matchingBranches = branches.filter(branch => branch.name === versionManifest.latest.snapshot);
+    console.log("minecraft-assets branches that match the latest MC version", matchingBranches);
 }
 
 /** @enum {string} */
