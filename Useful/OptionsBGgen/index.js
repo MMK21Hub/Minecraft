@@ -1,10 +1,10 @@
 /**
  * A utility for asynchronously fetching JSON data
- * @param {string} url 
+ * @param {string} url
  * @param {RequestInit} [options]
  */
 function fetchJSON(url, options) {
-    return fetch(url.toString(), options).then(res=>res.json())
+    return fetch(url.toString(), options).then((res) => res.json());
 }
 
 /** Utility function that uses the CORS Everywhere service to access a URL without CORS errors
@@ -27,7 +27,8 @@ function loadFile(filePath) {
     return result;
 }
 
-/** Fetches the data from the site's remote control gist
+/**
+ * Fetches the data from the remote control gist: https://gist.github.com/MMK21Hub/bbd7afbc74eb582c1a9d78b031b24f94
  * @returns {Promise<{run: boolean, downMsg: string}>}
  */
 async function getRemoteControl() {
@@ -53,7 +54,7 @@ async function main() {
     const branches = await fetchJSON(Endpoints.MINECRAFT_ASSETS_BRANCHES);
     console.log("minecraft-assets branches", branches);
 
-    const matchingBranches = branches.filter(branch => branch.name === versionManifest.latest.snapshot);
+    const matchingBranches = branches.filter((branch) => branch.name === versionManifest.latest.snapshot);
     console.log("minecraft-assets branches that match the latest MC version", matchingBranches);
 }
 
