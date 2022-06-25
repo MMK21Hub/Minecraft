@@ -1,23 +1,16 @@
 {
-  "name": "minecraft-utils",
+  "name": "@mmk21hub/minecraft-utils",
   "version": "1.0.0",
-  "description": "I play Minecraft.",
+  "description": "MMK21's online utilities for Minecraft",
   "main": "index.html",
-  "dependencies": {},
-  "devDependencies": {
-    "eslint": "^7.9.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MMK21Hub/Minecraft.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "MMK21",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/MMK21Hub/Minecraft/issues"
   },
-  "homepage": "https://github.com/MMK21Hub/Minecraft#readme"
+  "homepage": "https://mmk21hub.github.io/Minecraft/Useful/OptionsBGgen/"
 }
