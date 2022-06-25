@@ -1,6 +1,5 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
-function loadFile(filePath) { // https://stackoverflow.com/a/41133213/11519302
+function loadFile(filePath) {
+    // https://stackoverflow.com/a/41133213/11519302
     var result = null;
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", filePath, false);
@@ -20,7 +19,8 @@ function checkBranches(value){
 }
 
 // Get remote control
-commitsList = JSON.parse(loadFile("https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits"));
+const commitsUrl = "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits";
+commitsList = JSON.parse(loadFile(commitsUrl));
 latestCommit = JSON.parse(loadFile(commitsList[0].url));
 remoteControl = latestCommit.files["remoteControl.json"].content;
 remoteControl = JSON.parse(remoteControl);
