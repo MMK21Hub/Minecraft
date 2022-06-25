@@ -44,8 +44,11 @@ async function main() {
 
     // Don't run the app if the site is disabled. Instead, show an error message.
     if (!remoteControl.run) {
-        document.getElementById("body").innerHTML = "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>"+downMsg+"</em></small></p>";
-        return
+        document.getElementById("body").innerHTML =
+            "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>" +
+            downMsg +
+            "</em></small></p>";
+        return;
     }
 
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
@@ -54,8 +57,13 @@ async function main() {
     const branches = await fetchJSON(Endpoints.MINECRAFT_ASSETS_BRANCHES);
     console.log("minecraft-assets branches", branches);
 
-    const matchingBranches = branches.filter((branch) => branch.name === versionManifest.latest.snapshot);
-    console.log("minecraft-assets branches that match the latest MC version", matchingBranches);
+    const matchingBranches = branches.filter(
+        (branch) => branch.name === versionManifest.latest.snapshot
+    );
+    console.log(
+        "minecraft-assets branches that match the latest MC version",
+        matchingBranches
+    );
 }
 
 /** @enum {string} */
@@ -68,4 +76,4 @@ const Endpoints = {
         "https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3",
 };
 
-main()
+main();
