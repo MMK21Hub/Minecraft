@@ -25,6 +25,16 @@ function checkBranches(value){
     }
 }
 
+/** Fetches the data from the site's remote control gist
+ * @returns {{run: boolean, downMsg: string}}
+ */
+function getRemoteControl() {
+    const commitList = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
+    const latestCommit = JSON.parse(loadFile(commitList[0].url));
+    const rawContent = latestCommit.files["remoteControl.json"].content;
+    return JSON.parse(rawContent);
+}
+
 /** @enum {string} */
 const Endpoints = {
     REMOTE_CONTROL_COMMITS:
@@ -35,20 +45,13 @@ const Endpoints = {
         "https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3",
 };
 
-// Get remote control
-commitsList = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
-latestCommit = JSON.parse(loadFile(commitsList[0].url));
-remoteControl = latestCommit.files["remoteControl.json"].content;
-remoteControl = JSON.parse(remoteControl);
-downMsg = remoteControl.downMsg;
+const remoteControl = getRemoteControl();
+const downMsg = remoteControl.downMsg || "";
 
-// Act on Remote Control
-if (downMsg == undefined) {
-    downMsg = "";
-}
+
+// Only proceed if site is not disabled
 if (remoteControl.run == true) {
     console.log("Remote Control OK!");
-    // Only proceed if site is not disabled
     
     // Get version manifest
     versionManifest = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
