@@ -1,3 +1,10 @@
+/** Utility function that uses the CORS Everywhere service to access a URL without CORS errors
+ * @param {string} url
+ */
+function corsEverywhere(url) {
+    return "https://rocky-castle-55647.herokuapp.com/" + url;
+}
+
 function loadFile(filePath) {
     // https://stackoverflow.com/a/41133213/11519302
     var result = null;
@@ -18,9 +25,18 @@ function checkBranches(value){
     }
 }
 
+/** @enum {string} */
+const Endpoints = {
+    REMOTE_CONTROL_COMMITS:
+        "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits",
+    VERSION_MANIFEST:
+        "https://launchermeta.mojang.com/mc/game/version_manifest.json",
+    MINECRAFT_ASSETS_BRANCHES:
+        "https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3",
+};
+
 // Get remote control
-const commitsUrl = "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits";
-commitsList = JSON.parse(loadFile(commitsUrl));
+commitsList = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
 latestCommit = JSON.parse(loadFile(commitsList[0].url));
 remoteControl = latestCommit.files["remoteControl.json"].content;
 remoteControl = JSON.parse(remoteControl);
@@ -35,10 +51,10 @@ if (remoteControl.run == true) {
     // Only proceed if site is not disabled
     
     // Get version manifest
-    versionManifest = JSON.parse(loadFile("https://rocky-castle-55647.herokuapp.com/https://launchermeta.mojang.com/mc/game/version_manifest.json"));
+    versionManifest = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
     console.log(versionManifest.latest.snapshot);
 
-    branches = JSON.parse(loadFile("https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3"));
+    branches = JSON.parse(loadFile(Endpoints.MINECRAFT_ASSETS_BRANCHES));
     console.log(branches);
 
     var i;
