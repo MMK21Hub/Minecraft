@@ -31,8 +31,8 @@ function loadFile(filePath) {
  * @returns {Promise<{run: boolean, downMsg: string}>}
  */
 async function getRemoteControl() {
-    const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS)
-    const latestCommit = await fetchJSON(commitList[0].url)
+    const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS);
+    const latestCommit = await fetchJSON(commitList[0].url);
     const rawContent = latestCommit.files["remoteControl.json"].content;
     return JSON.parse(rawContent);
 }
