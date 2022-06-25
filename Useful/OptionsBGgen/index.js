@@ -29,7 +29,7 @@ function checkBranches(value){
  * @returns {{run: boolean, downMsg: string}}
  */
 function getRemoteControl() {
-    const commitList = JSON.parse(loadFile(Endpoints.VERSION_MANIFEST));
+    const commitList = JSON.parse(loadFile(Endpoints.REMOTE_CONTROL_COMMITS));
     const latestCommit = JSON.parse(loadFile(commitList[0].url));
     const rawContent = latestCommit.files["remoteControl.json"].content;
     return JSON.parse(rawContent);
