@@ -1,4 +1,17 @@
 /**
+ * @typedef {Object} GithubFileInfo
+ * @property {string} name The filename of the file (includes any file extension)
+ * @property {string} path The path to the file, within the repository branch (includes the filename)
+ * @property {string} sha
+ * @property {number} size The size of the file in bytes
+ * @property {string} url The API endpoint to access the contents of the file
+ * @property {string} html_url The URL that points to the file in GitHub's frontend
+ * @property {string} git_url The API endpoint to access the file's contents as a Git blob
+ * @property {string} download_url The raw.githubusercontent.com URL to directly download the file from
+ * @property {"file" | "dir" | "symlink" | "submodule"} type Tells you if this file-like object is a file, directory, or something else
+ */
+
+/**
  * A utility for asynchronously fetching JSON data
  * @param {string} url
  * @param {RequestInit} [options]
@@ -35,6 +48,26 @@ async function getRemoteControl() {
     result.commitTimestamp = new Date(latestCommit.updated_at);
     result.commitAuthor = latestCommit.owner.login;
     return result;
+}
+
+/**
+ * Gets the data of a block texture file from the vanilla resourcepack. Uses the mcmeta repository.
+ * @param {string} name The filename of the texture to fetch (within assets/minecraft/textures/block)
+ */
+async function getTextureFileData(name) {
+    const matchingFile = textureFileList.find((f) => f.name === name);
+    if (!matchingFile)
+        throw new Error(`Couldn't find a texture with the filename ${name}`);
+
+    const url = matchingFile.download_url;
+
+    const fileContent = await fetch(url, {
+        headers: {
+            Accept: "image/png",
+        },
+    }).then((res) => res.arrayBuffer());
+
+    return fileContent;
 }
 
 /**
@@ -138,6 +171,7 @@ async function loadSelectorContents() {
     /** @type {GithubFileInfo[]} */
     const textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
     const textureFiles = textureDirContents.filter((f) => f.type === "file");
+    textureFileList = textureFiles;
     console.log(
         `Fetched data for ${textureFiles.length} textures from the mcmeta repository on GitHub`
     );
@@ -153,18 +187,12 @@ async function loadSelectorContents() {
     removePlaceholder();
 }
 
-/**
- * @typedef {Object} GithubFileInfo
- * @property {string} name The filename of the file (includes any file extension)
- * @property {string} path The path to the file, within the repository branch (includes the filename)
- * @property {string} sha
- * @property {number} size The size of the file in bytes
- * @property {string} url The API endpoint to access the contents of the file
- * @property {string} html_url The URL that points to the file in GitHub's frontend
- * @property {string} git_url The API endpoint to access the file's contents as a Git blob
- * @property {string} download_url The raw.githubusercontent.com URL to directly download the file from
- * @property {"file" | "dir" | "symlink" | "submodule"} type Tells you if this file-like object is a file, directory, or something else
- */
+/** @param {Event} e */
+function onMainButtonClick(e) {
+    if (!(e.target instanceof HTMLButtonElement)) return;
+    const textureData = getTextureFileData(e.target.value);
+    console.log(textureData);
+}
 
 async function main() {
     const shouldRun = await checkRemoteControl();
@@ -174,6 +202,9 @@ async function main() {
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
     await loadSelectorContents();
+    document
+        .querySelector("#main-button")
+        .addEventListener("click", onMainButtonClick);
 }
 
 /** @enum {string} */
@@ -185,5 +216,8 @@ const Endpoints = {
     MCMETA_BLOCK_TEXTURES:
         "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
 };
+
+/** @type {GithubFileInfo[]} */
+let textureFileList;
 
 main();
