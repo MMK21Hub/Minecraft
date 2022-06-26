@@ -93,10 +93,22 @@ async function main() {
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
     /** @type {GithubFileInfo[]} */
-    const textureFiles = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
+    const textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
+    const textureFiles = textureDirContents.filter((f) => f.type === "file");
     console.log(
         `Fetched data for ${textureFiles.length} textures from the mcmeta repository on GitHub`
     );
+
+    /** @type {HTMLSelectElement} */
+    const textureSelector = document.querySelector("#texture-selector");
+
+    textureFiles.forEach((textureFile) => {
+        const option = document.createElement("option");
+        option.value = textureFile.name;
+        // Only use the basename of the file (ignore the .png extension)
+        option.textContent = textureFile.name.replace(/^(.*)\.(\w+)$/, "$1");
+        textureSelector.appendChild(option);
+    });
 }
 
 /** @enum {string} */
