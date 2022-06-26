@@ -70,6 +70,21 @@ function showSiteDisabledNote(data) {
         .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
 }
 
+function disableForm(placeholder = "Loading...") {
+    // Grab relevant elements
+    /** @type {HTMLSelectElement} */
+    const selector = document.querySelector("#texture-selector");
+    /** @type {HTMLButtonElement} */
+    const button = document.querySelector("#main-button");
+
+    // Store old state
+    const oldValue = selector.value;
+
+    // Disable the form
+    selector.disabled = true;
+    button.disabled = true;
+}
+
 /**
  * @returns {Promise<boolean>} `true` if the remote control is allowing the site to run, or if it's being ignored.
  */
