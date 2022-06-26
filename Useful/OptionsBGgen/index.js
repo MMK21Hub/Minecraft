@@ -28,8 +28,16 @@ function loadFile(filePath) {
 }
 
 /**
+ * @typedef {Object} RemoteControlData
+ * @property {boolean} run
+ * @property {string} downMsg
+ * @property {Date} commitTimestamp
+ * @property {string} commitAuthor
+ */
+
+/**
  * Fetches the data from the remote control gist: https://gist.github.com/MMK21Hub/bbd7afbc74eb582c1a9d78b031b24f94
- * @returns {Promise<{run: boolean, downMsg: string, commitTimestamp: Date, commitAuthor: string}>}
+ * @returns {Promise<RemoteControlData>}
  */
 async function getRemoteControl() {
     const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS);
@@ -42,44 +50,44 @@ async function getRemoteControl() {
     return result;
 }
 
+/**
+ * Replaces the page's contents with a notice indicating that the site is disabled
+ * @param {RemoteControlData} data The information to include in the notice
+ */
+function showSiteDisabledNote(data) {
+    const { downMsg, commitTimestamp, commitAuthor } = data;
+    const messageElement = `<p id="site-disabled-note">The Options Background Generator has been disabled remotely. Check back later?</p>`;
+    document.querySelector("body").innerHTML = messageElement;
+    if (!downMsg) return;
+
+    const siteDisabledNote = document.querySelector("#site-disabled-note");
+    siteDisabledNote.insertAdjacentHTML(
+        "afterend",
+        `<p id="site-disabled-message">Message provided by </p>`
+    );
+    const siteDisabledMessage = document.querySelector(
+        "#site-disabled-message"
+    );
+
+    siteDisabledMessage.textContent = `Message provided by ${commitAuthor}: `;
+    siteDisabledMessage.insertAdjacentHTML("beforeend", `<em></em>`);
+    siteDisabledMessage.querySelector("em").textContent = downMsg;
+
+    if (!commitTimestamp) return;
+    siteDisabledMessage.insertAdjacentHTML(
+        "afterend",
+        `<p id="site-disabled-timestamp">Remote control last updated </p>`
+    );
+    document
+        .querySelector("#site-disabled-timestamp")
+        .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
+}
+
 async function main() {
     const remoteControl = await getRemoteControl();
-    const downMsg = remoteControl.downMsg || "";
 
     // Don't run the app if the site is disabled. Instead, show an error message.
-    if (!remoteControl.run) {
-        const messageElement = `<p id="site-disabled-note">The Options Background Generator has been disabled remotely. Check back later?</p>`;
-        document.querySelector("body").innerHTML = messageElement;
-        if (remoteControl.downMsg) {
-            const siteDisabledNote = document.querySelector(
-                "#site-disabled-note"
-            );
-            siteDisabledNote.insertAdjacentHTML(
-                "afterend",
-                `<p id="site-disabled-message">Message provided by </p>`
-            );
-            const siteDisabledMessage = document.querySelector(
-                "#site-disabled-message"
-            );
-            siteDisabledMessage.textContent = `Message provided by ${remoteControl.commitAuthor}: `;
-            siteDisabledMessage.insertAdjacentHTML("beforeend", `<em></em>`);
-            siteDisabledMessage.querySelector("em").textContent = downMsg;
-
-            if (remoteControl.commitTimestamp) {
-                siteDisabledMessage.insertAdjacentHTML(
-                    "afterend",
-                    `<p id="site-disabled-timestamp">Remote control last updated </p>`
-                );
-                document
-                    .querySelector("#site-disabled-timestamp")
-                    .insertAdjacentText(
-                        "beforeend",
-                        remoteControl.commitTimestamp.toLocaleString()
-                    );
-            }
-        }
-        return;
-    }
+    if (!remoteControl.run) return showSiteDisabledNote(remoteControl);
 
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
     console.log("Latest MC version", versionManifest.latest.snapshot);
