@@ -26,3 +26,7 @@ a:link {
 a:visited {
     color: #c9c9c9;
 }
+
+select {
+    min-width: 16em;
+}
