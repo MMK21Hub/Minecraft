@@ -87,22 +87,33 @@ function disableForm(placeholder = "Loading...") {
     button.disabled = true;
 
     // Set the placeholder
-    selector.append(new Option(placeholder, placeholderValue));
+    const placeholderElement = new Option(placeholder, placeholderValue);
+    selector.append(placeholderElement);
     selector.value = placeholderValue;
 
-    function enableForm() {
+    function removePlaceholder() {
         // Restore old state
         selector.value = oldValue;
 
         // Remove the placeholder option
-        selector.querySelector(`option[value="${placeholderValue}"]`).remove();
+        placeholderElement.remove();
 
         // Enable the form
         selector.disabled = false;
         button.disabled = false;
     }
 
-    return enableForm;
+    /**
+     * @param {string} text
+     */
+    function updatePlaceholder(text) {
+        placeholderElement.textContent = text;
+    }
+
+    return {
+        removePlaceholder,
+        updatePlaceholder,
+    };
 }
 
 /**
@@ -122,7 +133,7 @@ async function loadSelectorContents() {
     /** @type {HTMLSelectElement} */
     const textureSelector = document.querySelector("#texture-selector");
 
-    const enableForm = disableForm();
+    const { removePlaceholder } = disableForm("Loading texture list...");
 
     /** @type {GithubFileInfo[]} */
     const textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
@@ -139,7 +150,7 @@ async function loadSelectorContents() {
         textureSelector.appendChild(option);
     });
 
-    enableForm();
+    removePlaceholder();
 }
 
 /**
