@@ -29,13 +29,17 @@ function loadFile(filePath) {
 
 /**
  * Fetches the data from the remote control gist: https://gist.github.com/MMK21Hub/bbd7afbc74eb582c1a9d78b031b24f94
- * @returns {Promise<{run: boolean, downMsg: string}>}
+ * @returns {Promise<{run: boolean, downMsg: string, commitTimestamp: Date, commitAuthor: string}>}
  */
 async function getRemoteControl() {
     const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS);
     const latestCommit = await fetchJSON(commitList[0].url);
     const rawContent = latestCommit.files["remoteControl.json"].content;
-    return JSON.parse(rawContent);
+    const result = JSON.parse(rawContent);
+
+    result.commitTimestamp = new Date(latestCommit.updated_at);
+    result.commitAuthor = latestCommit.owner.login;
+    return result;
 }
 
 async function main() {
@@ -44,10 +48,36 @@ async function main() {
 
     // Don't run the app if the site is disabled. Instead, show an error message.
     if (!remoteControl.run) {
-        document.getElementById("body").innerHTML =
-            "<p>The Options Background Generator has been disabled remotely. Check back later?</p><p><small><em>" +
-            downMsg +
-            "</em></small></p>";
+        const messageElement = `<p id="site-disabled-note">The Options Background Generator has been disabled remotely. Check back later?</p>`;
+        document.querySelector("body").innerHTML = messageElement;
+        if (remoteControl.downMsg) {
+            const siteDisabledNote = document.querySelector(
+                "#site-disabled-note"
+            );
+            siteDisabledNote.insertAdjacentHTML(
+                "afterend",
+                `<p id="site-disabled-message">Message provided by </p>`
+            );
+            const siteDisabledMessage = document.querySelector(
+                "#site-disabled-message"
+            );
+            siteDisabledMessage.textContent = `Message provided by ${remoteControl.commitAuthor}: `;
+            siteDisabledMessage.insertAdjacentHTML("beforeend", `<em></em>`);
+            siteDisabledMessage.querySelector("em").textContent = downMsg;
+
+            if (remoteControl.commitTimestamp) {
+                siteDisabledMessage.insertAdjacentHTML(
+                    "afterend",
+                    `<p id="site-disabled-timestamp">Remote control last updated </p>`
+                );
+                document
+                    .querySelector("#site-disabled-timestamp")
+                    .insertAdjacentText(
+                        "beforeend",
+                        remoteControl.commitTimestamp.toLocaleString()
+                    );
+            }
+        }
         return;
     }
 
