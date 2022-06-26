@@ -14,19 +14,6 @@ function corsEverywhere(url) {
     return "https://rocky-castle-55647.herokuapp.com/" + url;
 }
 
-function loadFile(filePath) {
-    // https://stackoverflow.com/a/41133213/11519302
-    var result = null;
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", filePath, false);
-    xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    xmlhttp.send();
-    if (xmlhttp.status == 200) {
-        result = xmlhttp.responseText;
-    }
-    return result;
-}
-
 /**
  * @typedef {Object} RemoteControlData
  * @property {boolean} run
@@ -83,6 +70,19 @@ function showSiteDisabledNote(data) {
         .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
 }
 
+/**
+ * @typedef {Object} GithubFileInfo
+ * @property {string} name The filename of the file (includes any file extension)
+ * @property {string} path The path to the file, within the repository branch (includes the filename)
+ * @property {string} sha
+ * @property {number} size The size of the file in bytes
+ * @property {string} url The API endpoint to access the contents of the file
+ * @property {string} html_url The URL that points to the file in GitHub's frontend
+ * @property {string} git_url The API endpoint to access the file's contents as a Git blob
+ * @property {string} download_url The raw.githubusercontent.com URL to directly download the file from
+ * @property {"file" | "dir" | "symlink" | "submodule"} type Tells you if this file-like object is a file, directory, or something else
+ */
+
 async function main() {
     const remoteControl = await getRemoteControl();
 
@@ -92,15 +92,10 @@ async function main() {
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
-    const branches = await fetchJSON(Endpoints.MINECRAFT_ASSETS_BRANCHES);
-    console.log("minecraft-assets branches", branches);
-
-    const matchingBranches = branches.filter(
-        (branch) => branch.name === versionManifest.latest.snapshot
-    );
+    /** @type {GithubFileInfo[]} */
+    const textureFiles = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
     console.log(
-        "minecraft-assets branches that match the latest MC version",
-        matchingBranches
+        `Fetched data for ${textureFiles.length} textures from the mcmeta repository on GitHub`
     );
 }
 
@@ -110,8 +105,8 @@ const Endpoints = {
         "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits",
     VERSION_MANIFEST:
         "https://launchermeta.mojang.com/mc/game/version_manifest.json",
-    MINECRAFT_ASSETS_BRANCHES:
-        "https://api.github.com/repos/InventivetalentDev/minecraft-assets/branches?page=3",
+    MCMETA_BLOCK_TEXTURES:
+        "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
 };
 
 main();
