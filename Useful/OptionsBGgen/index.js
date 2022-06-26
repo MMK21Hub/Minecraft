@@ -1,3 +1,12 @@
+/** Creates an AbortController that throws as soon as it's aborted */
+function volatileAbortController() {
+    const controller = new AbortController();
+    controller.signal.addEventListener("abort", () => {
+        throw controller.signal.reason;
+    });
+    return controller;
+}
+
 /**
  * A utility for asynchronously fetching JSON data
  * @param {string} url
@@ -70,6 +79,22 @@ function showSiteDisabledNote(data) {
         .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
 }
 
+/**
+ * @param {AbortController} aborter
+ * @returns `true` if the remote control is allowing the site to run, or if it's being ignored.
+ */
+async function checkRemoteControl(aborter) {
+    if (window.location.host !== "mmk21hub.github.io")
+        return aborter.abort(ErrorType.REMOTELY_DISABLED);
+
+    const remoteControl = await getRemoteControl();
+    if (remoteControl.run) return true;
+
+    showSiteDisabledNote(remoteControl);
+    aborter.abort(ErrorType.REMOTELY_DISABLED);
+    return false;
+}
+
 async function loadSelectorContents() {
     /** @type {HTMLSelectElement} */
     const textureSelector = document.querySelector("#texture-selector");
@@ -108,10 +133,13 @@ async function loadSelectorContents() {
  */
 
 async function main() {
-    const remoteControl = await getRemoteControl();
-
-    // Don't run the app if the site is disabled. Instead, show an error message.
-    if (!remoteControl.run) return showSiteDisabledNote(remoteControl);
+    try {
+        const aborter = volatileAbortController();
+        const shouldRun = await checkRemoteControl(aborter);
+    } catch (error) {
+        console.error(error);
+        debugger;
+    }
 
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
     console.log("Latest MC version", versionManifest.latest.snapshot);
@@ -129,4 +157,23 @@ const Endpoints = {
         "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
 };
 
-main();
+/** @enum {symbol} */
+const ErrorType = {
+    REMOTELY_DISABLED: Symbol(),
+};
+
+try {
+    await main();
+} catch (error) {
+    console.log(error);
+    debugger;
+}
+
+main().catch((error) => {
+    console.warn("!!");
+    if (Object.values(ErrorType).includes(error)) throw error;
+    if (error === ErrorType.REMOTELY_DISABLED) return;
+    throw error;
+});
+
+export {};
