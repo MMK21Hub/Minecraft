@@ -132,7 +132,7 @@ function disableForm(placeholder = "Loading...", options = {}) {
         button.disabled = true;
 
         // Set the placeholder
-        const placeholderElement = new Option(placeholder, placeholderValue);
+        placeholderElement = new Option(placeholder, placeholderValue);
         selector.append(placeholderElement);
         selector.value = placeholderValue;
     });
