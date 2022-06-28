@@ -188,10 +188,16 @@ async function loadSelectorContents() {
 }
 
 /** @param {Event} e */
-function onMainButtonClick(e) {
-    if (!(e.target instanceof HTMLButtonElement)) return;
-    const textureData = getTextureFileData(e.target.value);
-    console.log(textureData);
+async function activateGenerator(e) {
+    if (!(e.target instanceof HTMLFormElement)) return;
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const textureName = formData.get("selected-texture").toString();
+
+    const { removePlaceholder } = disableForm("Fetching texture...");
+    const textureData = await getTextureFileData(textureName);
+    removePlaceholder();
+    console.log(`Texture data for ${textureName}`, textureData);
 }
 
 async function main() {
@@ -203,8 +209,8 @@ async function main() {
 
     await loadSelectorContents();
     document
-        .querySelector("#main-button")
-        .addEventListener("click", onMainButtonClick);
+        .querySelector("form")
+        .addEventListener("submit", activateGenerator);
 }
 
 /** @enum {string} */
