@@ -103,7 +103,14 @@ function showSiteDisabledNote(data) {
         .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
 }
 
-function disableForm(placeholder = "Loading...") {
+/**
+ *
+ * @param {string} placeholder The text to show in the disabled selector
+ * @param {object} options
+ * @param {number} [options.delay] Wait for a specified number of milliseconds before disabling the selector. Used to prevent the flash of a disabled selector when the operation completes quickly.
+ * @returns
+ */
+function disableForm(placeholder = "Loading...", options = {}) {
     const placeholderValue = "__placeholder__";
 
     // Grab relevant elements
@@ -115,16 +122,25 @@ function disableForm(placeholder = "Loading...") {
     // Store old state
     const oldValue = selector.value;
 
-    // Disable the form
-    selector.disabled = true;
-    button.disabled = true;
+    // Keep track of the element being used as a placeholder option
+    /** @type {HTMLOptionElement} */
+    let placeholderElement = null;
 
-    // Set the placeholder
-    const placeholderElement = new Option(placeholder, placeholderValue);
-    selector.append(placeholderElement);
-    selector.value = placeholderValue;
+    setTimeout(() => {
+        // Disable the form
+        selector.disabled = true;
+        button.disabled = true;
+
+        // Set the placeholder
+        const placeholderElement = new Option(placeholder, placeholderValue);
+        selector.append(placeholderElement);
+        selector.value = placeholderValue;
+    });
 
     function removePlaceholder() {
+        // Do nothing if the state change hasn't happened yet
+        if (!placeholderElement) return;
+
         // Restore old state
         selector.value = oldValue;
 
@@ -140,6 +156,11 @@ function disableForm(placeholder = "Loading...") {
      * @param {string} text
      */
     function updatePlaceholder(text) {
+        // If the state change hasn't happened yet,
+        // just modify the string that will be used
+        // as the placeholder text
+        if (!placeholderElement) placeholder = text;
+
         placeholderElement.textContent = text;
     }
 
