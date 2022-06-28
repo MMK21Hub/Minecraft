@@ -1,3 +1,8 @@
+// @ts-ignore
+import hyperScript from "https://cdn.skypack.dev/hyperscript";
+// @ts-ignore
+import hyperScriptHelpers from "https://cdn.skypack.dev/hyperscript-helpers";
+
 /**
  * @typedef {Object} GithubFileInfo
  * @property {string} name The filename of the file (includes any file extension)
@@ -233,6 +238,12 @@ async function main() {
         .querySelector("form")
         .addEventListener("submit", activateGenerator);
 }
+
+/** @type {import("hyperscript")} */
+const h = hyperScript;
+/** @type {import("./hyperscript").default} */
+const hh = hyperScriptHelpers;
+const { p, em, option } = hh(h);
 
 /** @enum {string} */
 const Endpoints = {

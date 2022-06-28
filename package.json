@@ -12,5 +12,9 @@
   "bugs": {
     "url": "https://github.com/MMK21Hub/Minecraft/issues"
   },
-  "homepage": "https://mmk21hub.github.io/Minecraft/Useful/OptionsBGgen/"
+  "homepage": "https://mmk21hub.github.io/Minecraft/Useful/OptionsBGgen/",
+  "devDependencies": {
+    "@types/hyperscript": "^0.0.4",
+    "hyperscript-helpers": "^3.0.3"
+  }
 }
