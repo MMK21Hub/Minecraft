@@ -81,31 +81,30 @@ async function getTextureFileData(name) {
  */
 function showSiteDisabledNote(data) {
     const { downMsg, commitTimestamp, commitAuthor } = data;
-    const messageElement = `<p id="site-disabled-note">The Options Background Generator has been disabled remotely. Check back later?</p>`;
-    document.querySelector("body").innerHTML = messageElement;
+    const siteDisabledWrapper = div(
+        "#site-disabled-wrapper",
+        p(
+            "#site-disabled-note",
+            "The Options Background Generator has been disabled remotely. Check back later?"
+        )
+    );
+    document.querySelector("body").replaceWith(siteDisabledWrapper);
     if (!downMsg) return;
 
-    const siteDisabledNote = document.querySelector("#site-disabled-note");
-    siteDisabledNote.insertAdjacentHTML(
-        "afterend",
-        `<p id="site-disabled-message">Message provided by </p>`
+    siteDisabledWrapper.append(
+        p("#site-disabled-message", [
+            `Message provided by ${commitAuthor}: `,
+            em(downMsg),
+        ])
     );
-    const siteDisabledMessage = document.querySelector(
-        "#site-disabled-message"
-    );
-
-    siteDisabledMessage.textContent = `Message provided by ${commitAuthor}: `;
-    siteDisabledMessage.insertAdjacentHTML("beforeend", `<em></em>`);
-    siteDisabledMessage.querySelector("em").textContent = downMsg;
 
     if (!commitTimestamp) return;
-    siteDisabledMessage.insertAdjacentHTML(
-        "afterend",
-        `<p id="site-disabled-timestamp">Remote control last updated </p>`
+    siteDisabledWrapper.append(
+        p(
+            "#site-disabled-timestamp",
+            `Remote control last updated ${commitTimestamp.toLocaleString()}`
+        )
     );
-    document
-        .querySelector("#site-disabled-timestamp")
-        .insertAdjacentText("beforeend", commitTimestamp.toLocaleString());
 }
 
 /**
@@ -243,7 +242,7 @@ async function main() {
 const hyperScript = hyperScriptImport;
 /** @type {import("./hyperscript").default} */
 const hyperScriptHelpers = hyperScriptHelpersImport;
-const { p, em, option } = hyperScriptHelpers(hyperScript);
+const { div, p, em, option } = hyperScriptHelpers(hyperScript);
 
 /** @enum {string} */
 const Endpoints = {
