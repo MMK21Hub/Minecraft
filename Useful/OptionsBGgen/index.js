@@ -1,7 +1,7 @@
 // @ts-ignore
-import hyperScript from "https://cdn.skypack.dev/hyperscript";
+import hyperScriptImport from "https://cdn.skypack.dev/hyperscript";
 // @ts-ignore
-import hyperScriptHelpers from "https://cdn.skypack.dev/hyperscript-helpers";
+import hyperScriptHelpersImport from "https://cdn.skypack.dev/hyperscript-helpers";
 
 /**
  * @typedef {Object} GithubFileInfo
@@ -240,10 +240,10 @@ async function main() {
 }
 
 /** @type {import("hyperscript")} */
-const h = hyperScript;
+const hyperScript = hyperScriptImport;
 /** @type {import("./hyperscript").default} */
-const hh = hyperScriptHelpers;
-const { p, em, option } = hh(h);
+const hyperScriptHelpers = hyperScriptHelpersImport;
+const { p, em, option } = hyperScriptHelpers(hyperScript);
 
 /** @enum {string} */
 const Endpoints = {
