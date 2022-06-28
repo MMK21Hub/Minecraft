@@ -135,7 +135,7 @@ function disableForm(placeholder = "Loading...", options = {}) {
         placeholderElement = new Option(placeholder, placeholderValue);
         selector.append(placeholderElement);
         selector.value = placeholderValue;
-    });
+    }, options.delay || 0);
 
     function removePlaceholder() {
         // Do nothing if the state change hasn't happened yet
