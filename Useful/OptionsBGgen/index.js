@@ -25,8 +25,10 @@ function fetchJSON(url, options) {
     return fetch(url.toString(), options).then((res) => res.json());
 }
 
-/** Utility function that uses the CORS Everywhere service to access a URL without CORS errors
+/**
+ * Utility function that uses the CORS Everywhere service to access a URL without CORS errors
  * @param {string} url
+ * @deprecated CORS Everywhere service is currently non-functional
  */
 function corsEverywhere(url) {
     return "https://rocky-castle-55647.herokuapp.com/" + url;
@@ -77,34 +79,41 @@ async function getTextureFileData(name) {
 
 /**
  * Replaces the page's contents with a notice indicating that the site is disabled
- * @param {RemoteControlData} data The information to include in the notice
+ * @param {RemoteControlData} [data] The information to include in the notice
  */
 function showSiteDisabledNote(data) {
-    const { downMsg, commitTimestamp, commitAuthor } = data;
+    /** `true` is the site has been disabled by the user, i.e. with a URL param */
+    const manuallyDisabled = !data;
+
+    const message = !manuallyDisabled
+        ? "The Options Background Generator has been disabled remotely. Check back later?"
+        : `Remove the "disabled" URL parameter to use this page.`;
     const siteDisabledWrapper = div(
         "#site-disabled-wrapper",
-        p(
-            "#site-disabled-note",
-            "The Options Background Generator has been disabled remotely. Check back later?"
-        )
+        p("#site-disabled-note", message)
     );
-    document.querySelector("body").replaceWith(siteDisabledWrapper);
-    if (!downMsg) return;
+    document.body.replaceWith(siteDisabledWrapper);
 
-    siteDisabledWrapper.append(
-        p("#site-disabled-message", [
-            `Message provided by ${commitAuthor}: `,
-            em(downMsg),
-        ])
-    );
+    if (manuallyDisabled) return;
+    const { downMsg, commitTimestamp, commitAuthor } = data;
 
-    if (!commitTimestamp) return;
-    siteDisabledWrapper.append(
-        p(
-            "#site-disabled-timestamp",
-            `Remote control last updated ${commitTimestamp.toLocaleString()}`
-        )
-    );
+    if (downMsg) {
+        siteDisabledWrapper.append(
+            p("#site-disabled-message", [
+                `Message provided by ${commitAuthor}: `,
+                em(downMsg),
+            ])
+        );
+    }
+
+    if (commitTimestamp) {
+        siteDisabledWrapper.append(
+            p(
+                "#site-disabled-timestamp",
+                `Remote control last updated ${commitTimestamp.toLocaleString()}`
+            )
+        );
+    }
 }
 
 /**
@@ -118,16 +127,14 @@ function disableForm(placeholder = "Loading...", options = {}) {
     const placeholderValue = "__placeholder__";
 
     // Grab relevant elements
-    /** @type {HTMLSelectElement} */
-    const selector = document.querySelector("#texture-selector");
-    /** @type {HTMLButtonElement} */
-    const button = document.querySelector("#main-button");
+    const selector = /** @type {HTMLButtonElement} */ ($("#texture-selector"));
+    const button = /** @type {HTMLButtonElement} */ ($("#main-button"));
 
     // Store old state
     const oldValue = selector.value;
 
     // Keep track of the element being used as a placeholder option
-    /** @type {HTMLOptionElement} */
+    /** @type {HTMLOptionElement?} */
     let placeholderElement = null;
 
     setTimeout(() => {
@@ -160,12 +167,14 @@ function disableForm(placeholder = "Loading...", options = {}) {
      * @param {string} text
      */
     function updatePlaceholder(text) {
-        // If the state change hasn't happened yet,
-        // just modify the string that will be used
-        // as the placeholder text
-        if (!placeholderElement) placeholder = text;
+        if (placeholderElement) {
+            placeholderElement.textContent = text;
+            return;
+        }
 
-        placeholderElement.textContent = text;
+        // If the state change hasn't happened yet, just modify
+        // the string that will be used as the placeholder text
+        placeholder = text;
     }
 
     return {
@@ -175,9 +184,16 @@ function disableForm(placeholder = "Loading...", options = {}) {
 }
 
 /**
- * @returns {Promise<boolean>} `true` if the remote control is allowing the site to run, or if it's being ignored.
+ * @returns {Promise<boolean>} `true` if the remote control is allowing the site to run.
  */
 async function checkRemoteControl() {
+    const forceDisabled = urlParams.has("disabled");
+
+    if (forceDisabled) {
+        showSiteDisabledNote();
+        return false;
+    }
+
     if (window.location.host !== "mmk21hub.github.io") return true;
 
     const remoteControl = await getRemoteControl();
@@ -188,8 +204,9 @@ async function checkRemoteControl() {
 }
 
 async function loadSelectorContents() {
-    /** @type {HTMLSelectElement} */
-    const textureSelector = document.querySelector("#texture-selector");
+    const textureSelector = /** @type {HTMLSelectElement} */ (
+        $("#texture-selector")
+    );
 
     const { removePlaceholder } = disableForm("Loading texture list...");
 
@@ -254,7 +271,16 @@ const Endpoints = {
         "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
 };
 
-/** @type {GithubFileInfo[]} */
+/**
+ * Shorthand for {@link document.querySelector} (gets an element from the DOM using a CSS selector)
+ * @param {string} selector A string representing a CSS selector
+ * @returns {Element | null} The first Element within the document that matches the specified selector, or null if no matches are found
+ */
+const $ = (selector) => document.querySelector(selector);
+/** Shorthand access to the current URL parameters */
+const urlParams = new URLSearchParams(window.location.search);
+
+/** An array of GitHub files for each available texture @type {GithubFileInfo[]} */
 let textureFileList;
 
 main();

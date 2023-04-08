@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "lib": ["DOM", "ES2019"],
+        "strict": false,
+        "strictNullChecks": true,
+        "checkJs": true
+    }
+}
