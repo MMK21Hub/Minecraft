@@ -29,5 +29,6 @@ a:visited {
 }
 
 select {
-    min-width: 16em;
+    min-width: min(16em, 100%);
+    max-width: 100%;
 }
