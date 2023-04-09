@@ -128,7 +128,7 @@ function disableForm(placeholder = "Loading...", options = {}) {
 
     // Grab relevant elements
     const selector = /** @type {HTMLButtonElement} */ ($("#texture-selector"));
-    const button = /** @type {HTMLButtonElement} */ ($("#main-button"));
+    const button = /** @type {HTMLButtonElement} */ ($("#generate-pack"));
 
     // Store old state
     const oldValue = selector.value;
@@ -144,6 +144,16 @@ function disableForm(placeholder = "Loading...", options = {}) {
 
         // Set the placeholder
         placeholderElement = new Option(placeholder, placeholderValue);
+        placeholderElement.setAttribute("data-form-placeholder", "true");
+
+        // Clean up any placeholder options that already exist
+        const existingPlaceholders = selector.querySelectorAll(
+            "option[data-form-placeholder]"
+        );
+        if (existingPlaceholders.length) {
+            existingPlaceholders.forEach((element) => element.remove());
+        }
+
         selector.append(placeholderElement);
         selector.value = placeholderValue;
     }, options.delay || 0);
@@ -211,7 +221,17 @@ async function loadSelectorContents() {
     const { removePlaceholder } = disableForm("Loading texture list...");
 
     /** @type {GithubFileInfo[]} */
-    const textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES);
+    let textureDirContents;
+    try {
+        textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES, {
+            signal: AbortSignal.timeout(0 * 1000),
+        });
+    } catch (error) {
+        disableForm("Failed to fetch textures!");
+        $("#refresh-texture-list").removeAttribute("hidden");
+        throw error;
+    }
+
     const textureFiles = textureDirContents.filter((f) => f.type === "file");
     textureFileList = textureFiles;
     console.log(
@@ -242,6 +262,10 @@ async function activateGenerator(e) {
     console.log(`Texture data for ${textureName}`, textureData);
 }
 
+async function reloadTextureList() {
+    123;
+}
+
 async function main() {
     const shouldRun = await checkRemoteControl();
     if (!shouldRun) return;
@@ -250,9 +274,7 @@ async function main() {
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
     await loadSelectorContents();
-    document
-        .querySelector("form")
-        .addEventListener("submit", activateGenerator);
+    mainForm.addEventListener("submit", activateGenerator);
 }
 
 /** @type {import("hyperscript")} */
@@ -279,8 +301,9 @@ const Endpoints = {
 const $ = (selector) => document.querySelector(selector);
 /** Shorthand access to the current URL parameters */
 const urlParams = new URLSearchParams(window.location.search);
-
 /** An array of GitHub files for each available texture @type {GithubFileInfo[]} */
 let textureFileList;
+
+const mainForm = document.querySelector("form");
 
 main();
