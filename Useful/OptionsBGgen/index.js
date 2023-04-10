@@ -226,6 +226,11 @@ function showError(options) {
         throw new SyntaxError(`Tags can't contain spaces`);
     }
 
+    // Deduplicate any errors with the same ID
+    const existingErrors = Array.from(errorList.querySelectorAll("li"));
+    const duplicates = existingErrors.filter((e) => e.dataset.id === id);
+    duplicates.forEach((element) => element.remove());
+
     const element = li(
         {
             "data-tags": tags?.join(" "),
@@ -269,7 +274,7 @@ async function loadSelectorContents() {
     let textureDirContents;
     try {
         textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES, {
-            signal: AbortSignal.timeout(0 * 1000),
+            signal: AbortSignal.timeout(10 * 1000),
         });
     } catch (error) {
         disableForm("Failed to fetch textures!");
@@ -318,7 +323,10 @@ async function reloadTextureList() {
         showError({
             category: "Texture list",
             message,
+            id: "loadSelectorContents",
         });
+
+        console.error("Failed to reload texture list:", error);
     }
 }
 
