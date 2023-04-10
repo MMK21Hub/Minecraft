@@ -209,6 +209,11 @@ function updateErrorList() {
     section.hidden = !errors;
 }
 
+/** Returns an array of all the errors currently being shown */
+function getErrors() {
+    return Array.from(errorList.querySelectorAll("li"));
+}
+
 /**
  * @param {object} options
  * @param {Child} [options.category]
@@ -218,7 +223,6 @@ function updateErrorList() {
  */
 function showError(options) {
     const { message, tags = [], id, category } = options;
-    const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
 
     // Validate that tags don't have spaces
     const invalidTagIndex = tags.findIndex((tag) => tag.includes(" "));
@@ -227,8 +231,7 @@ function showError(options) {
     }
 
     // Deduplicate any errors with the same ID
-    const existingErrors = Array.from(errorList.querySelectorAll("li"));
-    const duplicates = existingErrors.filter((e) => e.dataset.id === id);
+    const duplicates = getErrors().filter((e) => e.dataset.id === id);
     duplicates.forEach((element) => element.remove());
 
     const element = li(
@@ -240,6 +243,21 @@ function showError(options) {
     );
 
     errorList.append(element);
+    updateErrorList();
+}
+
+/**
+ * @param {string} tag
+ */
+function removeErrors(tag) {
+    const matches = getErrors().filter((error) => {
+        const tags = error.dataset.tags?.split(" ");
+        if (!tags) return;
+        return tags.includes(tag);
+    });
+
+    matches.forEach((match) => match.remove());
+
     updateErrorList();
 }
 
@@ -297,6 +315,7 @@ async function loadSelectorContents() {
     });
 
     removePlaceholder();
+    removeErrors("texture-list");
 }
 
 /** @param {Event} e */
@@ -323,7 +342,8 @@ async function reloadTextureList() {
         showError({
             category: "Texture list",
             message,
-            id: "loadSelectorContents",
+            id: "load-selector-contents",
+            tags: ["texture-list"],
         });
 
         console.error("Failed to reload texture list:", error);
@@ -370,5 +390,6 @@ const urlParams = new URLSearchParams(window.location.search);
 let textureFileList;
 
 const mainForm = document.querySelector("form");
+const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
 
 main();
