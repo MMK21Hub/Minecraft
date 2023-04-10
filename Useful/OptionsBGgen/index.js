@@ -4,6 +4,10 @@ import hyperScriptImport from "https://cdn.skypack.dev/hyperscript";
 import hyperScriptHelpersImport from "https://cdn.skypack.dev/hyperscript-helpers";
 
 /**
+ * @typedef {Element | string} Child
+ */
+
+/**
  * @typedef {Object} GithubFileInfo
  * @property {string} name The filename of the file (includes any file extension)
  * @property {string} path The path to the file, within the repository branch (includes the filename)
@@ -194,6 +198,47 @@ function disableForm(placeholder = "Loading...", options = {}) {
 }
 
 /**
+ * Corrects the state of the error list section.
+ * If there aren't any errors, the section is hidden. Otherwise, it's shown.
+ */
+function updateErrorList() {
+    const section = $("section#errors");
+    const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
+    const errors = errorList.childElementCount;
+
+    section.hidden = !errors;
+}
+
+/**
+ * @param {object} options
+ * @param {Child} [options.category]
+ * @param {Child} options.message
+ * @param {string[]} [options.tags]
+ * @param {string} [options.id]
+ */
+function showError(options) {
+    const { message, tags = [], id, category } = options;
+    const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
+
+    // Validate that tags don't have spaces
+    const invalidTagIndex = tags.findIndex((tag) => tag.includes(" "));
+    if (invalidTagIndex != -1) {
+        throw new SyntaxError(`Tags can't contain spaces`);
+    }
+
+    const element = li(
+        {
+            "data-tags": tags?.join(" "),
+            "data-id": id || "",
+        },
+        [strong([category, ":"]), " ", message]
+    );
+
+    errorList.append(element);
+    updateErrorList();
+}
+
+/**
  * @returns {Promise<boolean>} `true` if the remote control is allowing the site to run.
  */
 async function checkRemoteControl() {
@@ -263,7 +308,18 @@ async function activateGenerator(e) {
 }
 
 async function reloadTextureList() {
-    123;
+    try {
+        await loadSelectorContents();
+    } catch (error) {
+        let message = "Couldn't load textures";
+        if (error instanceof Error) message = error.message;
+        if (typeof error === "string") message = error;
+
+        showError({
+            category: "Texture list",
+            message,
+        });
+    }
 }
 
 async function main() {
@@ -273,15 +329,16 @@ async function main() {
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST, {});
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
-    await loadSelectorContents();
+    loadSelectorContents();
     mainForm.addEventListener("submit", activateGenerator);
+    $("#refresh-texture-list").addEventListener("click", reloadTextureList);
 }
 
 /** @type {import("hyperscript")} */
 const hyperScript = hyperScriptImport;
 /** @type {import("./hyperscript").default} */
 const hyperScriptHelpers = hyperScriptHelpersImport;
-const { div, p, em, option } = hyperScriptHelpers(hyperScript);
+const { div, p, em, li, strong } = hyperScriptHelpers(hyperScript);
 
 /** @enum {string} */
 const Endpoints = {
@@ -296,7 +353,7 @@ const Endpoints = {
 /**
  * Shorthand for {@link document.querySelector} (gets an element from the DOM using a CSS selector)
  * @param {string} selector A string representing a CSS selector
- * @returns {Element | null} The first Element within the document that matches the specified selector, or null if no matches are found
+ * @returns {HTMLElement | null} The first Element within the document that matches the specified selector, or null if no matches are found
  */
 const $ = (selector) => document.querySelector(selector);
 /** Shorthand access to the current URL parameters */
