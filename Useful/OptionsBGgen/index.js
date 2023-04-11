@@ -65,7 +65,7 @@ async function getRemoteControl() {
  * Gets the data of a block texture file from the vanilla resourcepack. Uses the mcmeta repository.
  * @param {string} name The filename of the texture to fetch (within assets/minecraft/textures/block)
  */
-async function getTextureFileData(name) {
+async function fetchTextureFileData(name) {
     const matchingFile = textureFileList.find((f) => f.name === name);
     if (!matchingFile)
         throw new Error(`Couldn't find a texture with the filename ${name}`);
@@ -318,17 +318,54 @@ async function loadSelectorContents() {
     removeErrors("texture-list");
 }
 
+function generatePackMetadata() {
+    return {
+        pack: {
+            description: "",
+            pack_format: 14, // TODO: Make this an option
+        },
+    };
+}
+
+/**
+ * @param {BlobPart} data The contents of the file, as a Buffer, Blob or string
+ * @param {string} type MIME type of the file
+ * @param {string} [filename] The user will be prompted to use this filename when downloading
+ */
+function promptForDownload(data, type, filename) {
+    const blob = new Blob([data], { type });
+    const url = URL.createObjectURL(blob);
+
+    const link = a({
+        download: filename,
+        href: url,
+    });
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+}
+
 /** @param {Event} e */
-async function activateGenerator(e) {
+async function generatePack(e) {
     if (!(e.target instanceof HTMLFormElement)) return;
     e.preventDefault();
     const formData = new FormData(e.target);
     const textureName = formData.get("selected-texture").toString();
 
     const { removePlaceholder } = disableForm("Fetching texture...");
-    const textureData = await getTextureFileData(textureName);
+    const textureData = await fetchTextureFileData(textureName);
     removePlaceholder();
     console.log(`Texture data for ${textureName}`, textureData);
+
+    const zip = new AdmZip();
+    const metaFile = Buffer.from(JSON.stringify(generatePackMetadata()));
+    zip.addFile("pack.mcmeta", metaFile);
+    zip.addFile("pack.png", Buffer.from(textureData));
+
+    //
 }
 
 async function reloadTextureList() {
@@ -351,6 +388,9 @@ async function reloadTextureList() {
 }
 
 async function main() {
+    // @ts-ignore
+    AdmZip = await import("https://cdn.skypack.dev/adm-zip");
+
     const shouldRun = await checkRemoteControl();
     if (!shouldRun) return;
 
@@ -358,15 +398,31 @@ async function main() {
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
     loadSelectorContents();
-    mainForm.addEventListener("submit", activateGenerator);
+    mainForm.addEventListener("submit", generatePack);
     $("#refresh-texture-list").addEventListener("click", reloadTextureList);
 }
+
+/**
+ * @typedef {import("./hyperscript").HyperScriptHelperFn<E, any, string | (string | Element)[]>} HyperScript<E>
+ * @template {HTMLElement} E
+ */
 
 /** @type {import("hyperscript")} */
 const hyperScript = hyperScriptImport;
 /** @type {import("./hyperscript").default} */
 const hyperScriptHelpers = hyperScriptHelpersImport;
-const { div, p, em, li, strong } = hyperScriptHelpers(hyperScript);
+// A load of code to get correct HTMLElement types when using hyperscript-helpers:
+const hh = hyperScriptHelpers(hyperScript);
+const p = /** @type {HyperScript<HTMLParagraphElement>} */ (hh.p);
+const div = /** @type {HyperScript<HTMLDivElement>} */ (hh.div);
+const em = /** @type {HyperScript<HTMLElement>} */ (hh.em);
+const strong = /** @type {HyperScript<HTMLElement>} */ (hh.strong);
+const li = /** @type {HyperScript<HTMLLIElement>} */ (hh.li);
+const a = /** @type {HyperScript<HTMLAnchorElement>} */ (hh.a);
+
+// Placeholders for dynamic imports in main()
+/** @type {typeof import("adm-zip")} */
+let AdmZip;
 
 /** @enum {string} */
 const Endpoints = {

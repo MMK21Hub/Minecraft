@@ -7,6 +7,11 @@
   resolved "https://registry.yarnpkg.com/@types/hyperscript/-/hyperscript-0.0.4.tgz#209df6d6f304a8515c8fadb395fe40446d64655a"
   integrity sha512-oZIYTxzfTYM6KNXwN3PPS5dow3KmjDcMDRF6iSxqidJSyw4kwo6yJlxrY/KrCc+0J14x0CflmZRApbcdLvwDiw==
 
+adm-zip@^0.5.10:
+  version "0.5.10"
+  resolved "https://registry.yarnpkg.com/adm-zip/-/adm-zip-0.5.10.tgz#4a51d5ab544b1f5ce51e1b9043139b639afff45b"
+  integrity sha512-x0HvcHqVJNTPk/Bw8JbLWlWoo6Wwnsug0fnYYro1HBrjxZ3G7/AZk7Ahv8JwDe1uIcz8eBqvu86FuF1POiG7vQ==
+
 hyperscript-helpers@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/hyperscript-helpers/-/hyperscript-helpers-3.0.3.tgz#583ac45214c9ea810991feb97bdb37fc3d12a1e8"
