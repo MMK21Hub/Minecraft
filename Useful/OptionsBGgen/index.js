@@ -162,7 +162,7 @@ function disableForm(placeholder = "Loading...", options = {}) {
 
         // Set the placeholder
         placeholderElement = new Option(placeholder, placeholderValue);
-        placeholderElement.setAttribute("data-form-placeholder", "true");
+        placeholderElement.dataset.formPlaceholder = "true";
 
         // Clean up any placeholder options that already exist
         const existingPlaceholders = selector.querySelectorAll(
