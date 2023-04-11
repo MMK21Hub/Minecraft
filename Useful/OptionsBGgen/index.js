@@ -321,11 +321,9 @@ async function loadSelectorContents() {
     );
 
     textureFiles.forEach((textureFile) => {
-        const option = document.createElement("option");
-        option.value = textureFile.name;
-        // Only use the basename of the file (ignore the .png extension)
-        option.textContent = removeExtension(textureFile.name);
-        textureSelector.appendChild(option);
+        const displayName = removeExtension(textureFile.name);
+        const option = new Option(displayName, textureFile.name);
+        textureSelector.add(option);
     });
 
     removePlaceholder();
