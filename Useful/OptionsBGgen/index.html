@@ -10,10 +10,10 @@
 
 <body id="body">
     <h1>Minecraft Options Background Generator</h1>
-    <form>
+    <form autocomplete="off">
         <label for="blocks">Select a texture to use for the background:</label>
-        <select name="selected-texture" id="texture-selector"></select>
-        <button id="generate-pack">Go!</button>
+        <select name="selected-texture" id="texture-selector" disabled></select>
+        <button id="generate-pack" disabled>Generate pack!</button>
         <button hidden id="refresh-texture-list" type="button">Reload textures</button>
     </form>
 
