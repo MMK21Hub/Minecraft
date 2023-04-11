@@ -327,6 +327,12 @@ async function loadSelectorContents() {
     });
 
     removePlaceholder();
+
+    // Select the stone texture by default
+    Array.from(textureSelector.options).forEach((option) => {
+        if (option.value === "stone.png") option.selected = true;
+    });
+
     removeErrors("texture-list");
 }
 
