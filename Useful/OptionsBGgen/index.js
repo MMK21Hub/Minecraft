@@ -1,8 +1,3 @@
-// @ts-ignore
-import hyperScriptImport from "https://cdn.skypack.dev/hyperscript";
-// @ts-ignore
-import hyperScriptHelpersImport from "https://cdn.skypack.dev/hyperscript-helpers";
-
 /**
  * @typedef {Element | string} Child
  */
@@ -428,6 +423,8 @@ async function main() {
     // @ts-ignore
     ClientZip = import("https://unpkg.com/client-zip@2.3.1/index.js");
 
+    await fetchHyperscript();
+
     const shouldRun = await checkRemoteControl();
     if (!shouldRun) return;
 
@@ -439,37 +436,34 @@ async function main() {
     $("#refresh-texture-list").addEventListener("click", reloadTextureList);
 }
 
-/**
- * @typedef {import("./hyperscript").HyperScriptHelperFn<E, any, string | (string | Element)[]>} HyperScript<E>
- * @template {HTMLElement} E
- */
+async function fetchHyperscript() {
+    updatePlaceholder("Loading hyperscript...");
+    const startTime = performance.now();
+    // @ts-ignore
+    hyperScript = await import("https://cdn.skypack.dev/hyperscript");
+    updatePlaceholder("Loading hyperscript-helpers...");
+    hyperScriptHelpers = await import(
+        // @ts-ignore
+        "https://cdn.skypack.dev/hyperscript-helpers"
+    );
 
-/** @type {import("hyperscript")} */
-const hyperScript = hyperScriptImport;
-/** @type {import("./hyperscript").default} */
-const hyperScriptHelpers = hyperScriptHelpersImport;
-// A load of code to get correct HTMLElement types when using hyperscript-helpers:
-const hh = hyperScriptHelpers(hyperScript);
-const p = /** @type {HyperScript<HTMLParagraphElement>} */ (hh.p);
-const div = /** @type {HyperScript<HTMLDivElement>} */ (hh.div);
-const em = /** @type {HyperScript<HTMLElement>} */ (hh.em);
-const strong = /** @type {HyperScript<HTMLElement>} */ (hh.strong);
-const li = /** @type {HyperScript<HTMLLIElement>} */ (hh.li);
-const a = /** @type {HyperScript<HTMLAnchorElement>} */ (hh.a);
+    // Put the placeholder back to "Loading..." because other tasks still need to be completed
+    // This assumption works because fetchHyperscript() is only called once, in main()
+    updatePlaceholder("Loading...");
+    console.log(
+        "Fetching hyperscript took (ms):",
+        performance.now() - startTime
+    );
 
-// Placeholders for dynamic imports
-/** @type {PromiseMaybe<import("client-zip")>} */
-let ClientZip;
-
-/** @enum {string} */
-const Endpoints = {
-    REMOTE_CONTROL_COMMITS:
-        "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits",
-    VERSION_MANIFEST:
-        "https://launchermeta.mojang.com/mc/game/version_manifest.json",
-    MCMETA_BLOCK_TEXTURES:
-        "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
-};
+    const hh = hyperScriptHelpers.default(hyperScript);
+    // We have to manually cast the specific HTMLElement types for each element:
+    p = /** @type {HyperScript<HTMLParagraphElement>} */ (hh.p);
+    div = /** @type {HyperScript<HTMLDivElement>} */ (hh.div);
+    em = /** @type {HyperScript<HTMLElement>} */ (hh.em);
+    strong = /** @type {HyperScript<HTMLElement>} */ (hh.strong);
+    li = /** @type {HyperScript<HTMLLIElement>} */ (hh.li);
+    a = /** @type {HyperScript<HTMLAnchorElement>} */ (hh.a);
+}
 
 /**
  * Shorthand for {@link document.querySelector} (gets an element from the DOM using a CSS selector)
@@ -481,6 +475,46 @@ const $ = (selector) => document.querySelector(selector);
 const urlParams = new URLSearchParams(window.location.search);
 /** An array of GitHub files for each available texture @type {GithubFileInfo[]} */
 let textureFileList;
+
+// EARLY LOADING STAGE
+const { updatePlaceholder } = disableForm("Loading app resources...");
+
+// Placeholders for dynamic imports
+/** @type {PromiseMaybe<import("client-zip")>} */
+let ClientZip;
+/** @type {import("hyperscript")} */
+let hyperScript;
+/** @type {import("./hyperscript")} */
+let hyperScriptHelpers;
+
+/**
+ * @typedef {import("./hyperscript").HyperScriptHelperFn<E, any, string | (string | Element)[]>} HyperScript<E>
+ * @template {HTMLElement} E
+ */
+
+// A load of scaffolding to get correct types when using hyperscript-helpers:
+/** @type {HyperScript<HTMLParagraphElement>} */
+let p,
+    /** @type {HyperScript<HTMLDivElement>} */
+    div,
+    /** @type {HyperScript<HTMLElement>} */
+    em,
+    /** @type {HyperScript<HTMLElement>} */
+    strong,
+    /** @type {HyperScript<HTMLLIElement>} */
+    li,
+    /** @type {HyperScript<HTMLAnchorElement>} */
+    a;
+
+/** @enum {string} */
+const Endpoints = {
+    REMOTE_CONTROL_COMMITS:
+        "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits",
+    VERSION_MANIFEST:
+        "https://launchermeta.mojang.com/mc/game/version_manifest.json",
+    MCMETA_BLOCK_TEXTURES:
+        "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
+};
 
 const mainForm = document.querySelector("form");
 const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
