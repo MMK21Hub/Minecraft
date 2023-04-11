@@ -8,6 +8,11 @@ import hyperScriptHelpersImport from "https://cdn.skypack.dev/hyperscript-helper
  */
 
 /**
+ * @typedef {Promise<T> | T} PromiseMaybe
+ * @template {any} T
+ */
+
+/**
  * @typedef {Object} GithubFileInfo
  * @property {string} name The filename of the file (includes any file extension)
  * @property {string} path The path to the file, within the repository branch (includes the filename)
@@ -27,6 +32,15 @@ import hyperScriptHelpersImport from "https://cdn.skypack.dev/hyperscript-helper
  */
 function fetchJSON(url, options) {
     return fetch(url.toString(), options).then((res) => res.json());
+}
+
+/**
+ * Removes the file extension from a filename
+ * @param {string} filename
+ * @returns The basename of the provided file
+ */
+function removeExtension(filename) {
+    return filename.replace(/^(.*)\.(\w+)$/, "$1");
 }
 
 /**
@@ -310,7 +324,7 @@ async function loadSelectorContents() {
         const option = document.createElement("option");
         option.value = textureFile.name;
         // Only use the basename of the file (ignore the .png extension)
-        option.textContent = textureFile.name.replace(/^(.*)\.(\w+)$/, "$1");
+        option.textContent = removeExtension(textureFile.name);
         textureSelector.appendChild(option);
     });
 
@@ -318,10 +332,15 @@ async function loadSelectorContents() {
     removeErrors("texture-list");
 }
 
-function generatePackMetadata() {
+/**
+ * Generates a minecraft resource pack metadata file
+ * @param {string} texture The texture name used in the pack, e.g `spruce_planks`
+ * @returns An object ready to be stringified and used as a pack.mcmeta
+ */
+function generatePackMetadata(texture) {
     return {
         pack: {
-            description: "",
+            description: `Uses the ${texture} texture as an options screen background`,
             pack_format: 14, // TODO: Make this an option
         },
     };
@@ -330,7 +349,7 @@ function generatePackMetadata() {
 /**
  * @param {BlobPart} data The contents of the file, as a Buffer, Blob or string
  * @param {string} type MIME type of the file
- * @param {string} [filename] The user will be prompted to use this filename when downloading
+ * @param {string} filename The user will be prompted to use this filename when downloading
  */
 function promptForDownload(data, type, filename) {
     const blob = new Blob([data], { type });
@@ -354,18 +373,32 @@ async function generatePack(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const textureName = formData.get("selected-texture").toString();
+    const textureFriendlyName = removeExtension(textureName);
 
     const { removePlaceholder } = disableForm("Fetching texture...");
     const textureData = await fetchTextureFileData(textureName);
     removePlaceholder();
     console.log(`Texture data for ${textureName}`, textureData);
 
-    const zip = new AdmZip();
-    const metaFile = Buffer.from(JSON.stringify(generatePackMetadata()));
-    zip.addFile("pack.mcmeta", metaFile);
-    zip.addFile("pack.png", Buffer.from(textureData));
+    const metaFileData = JSON.stringify(
+        generatePackMetadata(textureFriendlyName)
+    );
+    const files = [
+        new File([metaFileData], "pack.mcmeta"),
+        new File([textureData], "pack.png"),
+        new File(
+            [textureData],
+            "assets/minecraft/textures/gui/options_background.png"
+        ),
+    ];
 
-    //
+    const { downloadZip } = await ClientZip;
+    const zip = await downloadZip(files).arrayBuffer();
+    promptForDownload(
+        zip,
+        "application/zip",
+        `Options Background ${textureFriendlyName}`
+    );
 }
 
 async function reloadTextureList() {
@@ -389,7 +422,7 @@ async function reloadTextureList() {
 
 async function main() {
     // @ts-ignore
-    AdmZip = await import("https://cdn.skypack.dev/adm-zip");
+    ClientZip = import("https://unpkg.com/client-zip@2.3.1/index.js");
 
     const shouldRun = await checkRemoteControl();
     if (!shouldRun) return;
@@ -420,9 +453,9 @@ const strong = /** @type {HyperScript<HTMLElement>} */ (hh.strong);
 const li = /** @type {HyperScript<HTMLLIElement>} */ (hh.li);
 const a = /** @type {HyperScript<HTMLAnchorElement>} */ (hh.a);
 
-// Placeholders for dynamic imports in main()
-/** @type {typeof import("adm-zip")} */
-let AdmZip;
+// Placeholders for dynamic imports
+/** @type {PromiseMaybe<import("client-zip")>} */
+let ClientZip;
 
 /** @enum {string} */
 const Endpoints = {
