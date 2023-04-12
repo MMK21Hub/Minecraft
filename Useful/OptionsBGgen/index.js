@@ -433,7 +433,7 @@ async function loadSelectorContents() {
 function generatePackMetadata(texture) {
     return {
         pack: {
-            description: `Uses the ${texture} texture as an options screen background`,
+            description: `Use ${texture} as an options screen background`,
             pack_format: 14, // TODO: Make this an option
         },
     };
