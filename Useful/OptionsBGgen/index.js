@@ -55,7 +55,7 @@ async function safeFetch(url, options = {}, request) {
         ...options.error,
     };
 
-    const disabledForm = loadingText && disableForm?.(loadingText);
+    const disabledForm = loadingText && disableMainForm?.(loadingText);
     try {
         const response = await fetch(url.toString(), request);
         if (!response.ok) throw `${response.status} ${response.statusText}`;
@@ -63,7 +63,7 @@ async function safeFetch(url, options = {}, request) {
         return response;
     } catch (error) {
         shouldDisableForm
-            ? disableForm?.(failText)
+            ? disableMainForm?.(failText)
             : disabledForm.removePlaceholder();
         if (shouldShowError) {
             let message = `HTTP request failed (${parsedUrl})`;
@@ -210,29 +210,31 @@ function showSiteDisabledNote(data) {
 
 /**
  *
- * @param {string} placeholder The text to show in the disabled selector
  * @param {object} options
+ * @param {HTMLFormElement} options.form The form element that needs its controls disabled
+ * @param {HTMLSelectElement} [options.selector] The `<select>` element to show a placeholder message in
+ * @param {string} [options.placeholder] The text to show in the disabled selector
  * @param {number} [options.delay] Wait for a specified number of milliseconds before disabling the selector. Used to prevent the flash of a disabled selector when the operation completes quickly.
- * @returns
  */
-function disableForm(placeholder = "Loading...", options = {}) {
+function disableForm(options) {
+    const { form, delay, selector } = options;
+    let { placeholder } = options;
     const placeholderValue = "__placeholder__";
 
-    // Grab relevant elements
-    const selector = /** @type {HTMLButtonElement} */ ($("#texture-selector"));
-    const button = /** @type {HTMLButtonElement} */ ($("#generate-pack"));
-
     // Store old state
-    const oldValue = selector.value;
+    const oldValue = selector?.value;
 
     // Keep track of the element being used as a placeholder option
     /** @type {HTMLOptionElement?} */
     let placeholderElement = null;
 
     setTimeout(() => {
-        // Disable the form
-        selector.disabled = true;
-        button.disabled = true;
+        // Disable each control in the form
+        Array.from(form.elements).forEach((e) => {
+            if ("disabled" in e) e.disabled = true;
+        });
+
+        if (!selector) return;
 
         // Set the placeholder
         placeholderElement = new Option(placeholder, placeholderValue);
@@ -248,21 +250,21 @@ function disableForm(placeholder = "Loading...", options = {}) {
 
         selector.append(placeholderElement);
         selector.value = placeholderValue;
-    }, options.delay || 0);
+    }, delay || 0);
 
     function removePlaceholder() {
         // Do nothing if the state change hasn't happened yet
         if (!placeholderElement) return;
 
-        // Restore old state
+        // Re-enable the form's controls
+        Array.from(form.elements).forEach((e) => {
+            if ("disabled" in e) e.disabled = false;
+        });
+
+        // Restore old selector state
+        if (!selector) return;
         selector.value = oldValue;
-
-        // Remove the placeholder option
         placeholderElement.remove();
-
-        // Enable the form
-        selector.disabled = false;
-        button.disabled = false;
     }
 
     /**
@@ -283,6 +285,22 @@ function disableForm(placeholder = "Loading...", options = {}) {
         removePlaceholder,
         updatePlaceholder,
     };
+}
+
+/**
+ *
+ * @param {string} placeholder The text to show in the disabled selector
+ * @param {object} options
+ * @param {number} [options.delay] Wait for a specified number of milliseconds before disabling the selector. Used to prevent the flash of a disabled selector when the operation completes quickly.
+ * @returns
+ */
+function disableMainForm(placeholder = "Loading...", options = {}) {
+    return disableForm({
+        form: mainForm,
+        selector: textureSelector,
+        delay: options.delay,
+        placeholder,
+    });
 }
 
 /**
@@ -384,10 +402,6 @@ async function checkRemoteControl() {
 }
 
 async function loadSelectorContents() {
-    const textureSelector = /** @type {HTMLSelectElement} */ (
-        $("#texture-selector")
-    );
-
     /** @type {GithubFileInfo[]} */
     const textureDirContents = await fetchJSON(
         Endpoints.MCMETA_BLOCK_TEXTURES,
@@ -554,8 +568,15 @@ const urlParams = new URLSearchParams(window.location.search);
 /** An array of GitHub files for each available texture @type {GithubFileInfo[]} */
 let textureFileList;
 
+// ELEMENTS THAT ARE NEEDED IN THE GLOBAL SCOPE
+const mainForm = /** @type {HTMLFormElement} */ ($("#main-form"));
+const textureSelector = /** @type {HTMLSelectElement} */ (
+    $("#texture-selector")
+);
+const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
+
 // EARLY LOADING STAGE
-const { updatePlaceholder } = disableForm("Loading app resources...");
+const { updatePlaceholder } = disableMainForm("Loading app resources...");
 
 // Placeholders for dynamic imports
 /** @type {PromiseMaybe<import("client-zip")>} */
@@ -594,8 +615,5 @@ const Endpoints = {
     MCMETA_BLOCK_TEXTURES:
         "https://api.github.com/repos/misode/mcmeta/contents/assets/minecraft/textures/block?ref=assets",
 };
-
-const mainForm = document.querySelector("form");
-const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
 
 main();
