@@ -29,3 +29,12 @@ select {
     min-width: min(21em, 100%);
     max-width: 100%;
 }
+
+@media (pointer: coarse) {
+    select,
+    button {
+        font-size: 1em;
+        margin: 0.2em;
+        padding: 0.2em;
+    }
+}
