@@ -23,10 +23,47 @@
 /**
  * A utility for asynchronously fetching JSON data
  * @param {string} url
- * @param {RequestInit} [options]
+ * @param {RequestInit} [request]
+ * @param {object} [options]
+ * @param {string} [options.loadingText]
+ * @param {string} [options.failText]
+ * @param {(error: unknown) => void} [options.onFail]
+ * @param {Omit<ErrorOptions, "message">} [options.error]
+ * @param {boolean} [options.showError]
  */
-function fetchJSON(url, options) {
-    return fetch(url.toString(), options).then((res) => res.json());
+async function fetchJSON(url, options = {}, request) {
+    const parsedUrl = new URL(url);
+    const {
+        loadingText,
+        failText = `Failed to fetch ${parsedUrl.hostname}`,
+        onFail,
+        showError: shouldShowError = true,
+        error: errorOptions = {
+            // This should prevent the same request creating multiple errors:
+            id: parsedUrl.origin + parsedUrl.pathname + parsedUrl.search,
+            // Generic default category:
+            // category: "HTTP request",
+            extras: [`(${url})`],
+        },
+    } = options;
+    try {
+        const disabledForm = loadingText && disableForm?.(loadingText);
+        const response = await fetch(url.toString(), request);
+        if (!response.ok) throw `${response.status} ${response.statusText}`;
+        const responseData = await response.json();
+        disabledForm?.removePlaceholder();
+        return responseData;
+    } catch (error) {
+        if (failText) disableForm?.(failText);
+        if (shouldShowError) {
+            let message = `HTTP request failed (${parsedUrl})`;
+            if (error instanceof Error) message = error.message;
+            if (typeof error === "string") message = error;
+            showError({ ...errorOptions, message });
+        }
+        onFail?.(error);
+        throw error;
+    }
 }
 
 /**
@@ -60,8 +97,9 @@ function corsEverywhere(url) {
  * @returns {Promise<RemoteControlData>}
  */
 async function getRemoteControl() {
-    const commitList = await fetchJSON(Endpoints.REMOTE_CONTROL_COMMITS);
-    const latestCommit = await fetchJSON(commitList[0].url);
+    const requestOptions = { showError: false };
+    const commitList = await fetchJSON(Endpoints.RC_COMMITS, requestOptions);
+    const latestCommit = await fetchJSON(commitList[0].url, requestOptions);
     const rawContent = latestCommit.files["remoteControl.json"].content;
     const result = JSON.parse(rawContent);
 
@@ -224,14 +262,19 @@ function getErrors() {
 }
 
 /**
- * @param {object} options
- * @param {Child} [options.category]
- * @param {Child} options.message
- * @param {string[]} [options.tags]
- * @param {string} [options.id]
+ * @typedef {Object} ErrorOptions
+ * @property {Child} [category]
+ * @property {Child} message
+ * @property {Child[]} [extras]
+ * @property {string[]} [tags]
+ * @property {string} [id]
+ */
+
+/**
+ * @param {ErrorOptions} options
  */
 function showError(options) {
-    const { message, tags = [], id, category } = options;
+    const { message, tags = [], id, category, extras = [] } = options;
 
     // Validate that tags don't have spaces
     const invalidTagIndex = tags.findIndex((tag) => tag.includes(" "));
@@ -248,7 +291,7 @@ function showError(options) {
             "data-tags": tags?.join(" "),
             "data-id": id || "",
         },
-        [strong([category, ":"]), " ", message]
+        [category && strong([category, ":"]), " ", message, " ", ...extras]
     );
 
     errorList.append(element);
@@ -281,13 +324,21 @@ async function checkRemoteControl() {
         return false;
     }
 
-    if (window.location.host !== "mmk21hub.github.io") return true;
+    // Remote control should still be checked during development, for testing purposes
+    const isDev = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    // Remote control should only apply to the official domain
+    if (!isDev && window.location.host !== "mmk21hub.github.io") return true;
 
-    const remoteControl = await getRemoteControl();
-    if (remoteControl.run) return true;
-
-    showSiteDisabledNote(remoteControl);
-    return false;
+    try {
+        const remoteControl = await getRemoteControl();
+        if (remoteControl.run) return true;
+        showSiteDisabledNote(remoteControl);
+        return false;
+    } catch (error) {
+        console.warn("Failed to fetch remote control");
+        // Assume that it's safe to run the app
+        return true;
+    }
 }
 
 async function loadSelectorContents() {
@@ -295,19 +346,22 @@ async function loadSelectorContents() {
         $("#texture-selector")
     );
 
-    const { removePlaceholder } = disableForm("Loading texture list...");
-
     /** @type {GithubFileInfo[]} */
-    let textureDirContents;
-    try {
-        textureDirContents = await fetchJSON(Endpoints.MCMETA_BLOCK_TEXTURES, {
-            signal: AbortSignal.timeout(10 * 1000),
-        });
-    } catch (error) {
-        disableForm("Failed to fetch textures!");
-        $("#refresh-texture-list").removeAttribute("hidden");
-        throw error;
-    }
+    const textureDirContents = await fetchJSON(
+        Endpoints.MCMETA_BLOCK_TEXTURES,
+        {
+            loadingText: "Loading texture list...",
+            failText: "Failed to fetch textures!",
+            onFail() {
+                $("#refresh-texture-list").removeAttribute("hidden");
+            },
+            error: {
+                category: "Texture list",
+                id: "load-selector-contents",
+                tags: ["texture-list"],
+            },
+        }
+    );
 
     const textureFiles = textureDirContents.filter((f) => f.type === "file");
     textureFileList = textureFiles;
@@ -320,8 +374,6 @@ async function loadSelectorContents() {
         const option = new Option(displayName, textureFile.name);
         textureSelector.add(option);
     });
-
-    removePlaceholder();
 
     // Select the stone texture by default
     Array.from(textureSelector.options).forEach((option) => {
@@ -428,7 +480,7 @@ async function main() {
     const shouldRun = await checkRemoteControl();
     if (!shouldRun) return;
 
-    const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST, {});
+    const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
     loadSelectorContents();
@@ -455,7 +507,7 @@ async function fetchHyperscript() {
         performance.now() - startTime
     );
 
-    const hh = hyperScriptHelpers.default(hyperScript);
+    const hh = hyperScriptHelpers.default(hyperScript.default);
     // We have to manually cast the specific HTMLElement types for each element:
     p = /** @type {HyperScript<HTMLParagraphElement>} */ (hh.p);
     div = /** @type {HyperScript<HTMLDivElement>} */ (hh.div);
@@ -482,7 +534,7 @@ const { updatePlaceholder } = disableForm("Loading app resources...");
 // Placeholders for dynamic imports
 /** @type {PromiseMaybe<import("client-zip")>} */
 let ClientZip;
-/** @type {import("hyperscript")} */
+/** @type {{default: import("hyperscript")}} */
 let hyperScript;
 /** @type {import("./hyperscript")} */
 let hyperScriptHelpers;
@@ -508,7 +560,8 @@ let p,
 
 /** @enum {string} */
 const Endpoints = {
-    REMOTE_CONTROL_COMMITS:
+    /** A list of commits to the remote control gist. Used to get the latest revision and its metadata. */
+    RC_COMMITS:
         "https://api.github.com/gists/bbd7afbc74eb582c1a9d78b031b24f94/commits",
     VERSION_MANIFEST:
         "https://launchermeta.mojang.com/mc/game/version_manifest.json",
