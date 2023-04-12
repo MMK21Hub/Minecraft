@@ -401,7 +401,7 @@ async function checkRemoteControl() {
     }
 }
 
-async function loadSelectorContents() {
+async function loadTextureSelector() {
     /** @type {GithubFileInfo[]} */
     const textureDirContents = await fetchJSON(
         Endpoints.MCMETA_BLOCK_TEXTURES,
@@ -439,6 +439,20 @@ async function loadSelectorContents() {
     });
 
     removeErrors("texture-list");
+}
+
+function loadVersionSelector() {
+    Object.entries(minecraftVersions())
+        .reverse()
+        .forEach(([versionId]) =>
+            versionSelector.add(new Option(versionId, versionId))
+        );
+
+    // for (let v in l) {
+    //     s.add(new Option(v));
+    // }
+
+    versionSelector.disabled = false;
 }
 
 /**
@@ -511,6 +525,24 @@ async function generatePack(e) {
     );
 }
 
+/**
+ * Generates a mapping of major Minecraft versions to their resource pack format
+ * @returns {Record<string, number>}
+ */
+function minecraftVersions() {
+    // https://misode.github.io/versions/
+    return {
+        1.14: 4,
+        1.15: 5,
+        1.16: 6,
+        1.17: 7,
+        1.18: 9,
+        "1.19.2": 10,
+        "1.19.3": 10,
+        "1.19.4": 12,
+    };
+}
+
 async function main() {
     // @ts-ignore
     ClientZip = import("https://unpkg.com/client-zip@2.3.1/index.js");
@@ -523,9 +555,10 @@ async function main() {
     const versionManifest = await fetchJSON(Endpoints.VERSION_MANIFEST);
     console.log("Latest MC version", versionManifest.latest.snapshot);
 
-    loadSelectorContents();
+    loadTextureSelector();
+    loadVersionSelector();
     mainForm.addEventListener("submit", generatePack);
-    $("#refresh-texture-list").addEventListener("click", loadSelectorContents);
+    $("#refresh-texture-list").addEventListener("click", loadTextureSelector);
 }
 
 async function fetchHyperscript() {
@@ -572,6 +605,9 @@ let textureFileList;
 const mainForm = /** @type {HTMLFormElement} */ ($("#main-form"));
 const textureSelector = /** @type {HTMLSelectElement} */ (
     $("#texture-selector")
+);
+const versionSelector = /** @type {HTMLSelectElement} */ (
+    $("#mc-version-selector")
 );
 const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
 

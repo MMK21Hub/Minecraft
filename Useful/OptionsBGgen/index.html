@@ -4,6 +4,7 @@
     <title>Options Background Generator</title>
     <link rel="stylesheet" type="text/css" href="index.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
     <meta name="description" content="Generate your own custom Options Background resource pack for Minecraft, using any block you like!">
     <meta name="keywords" content="minecraft,resource pack,options background,customization,vanilla tweaks,resource pack generator">
     <script src="index.js" type="module" async></script>
@@ -11,13 +12,19 @@
 
 <body id="body">
     <h1>Minecraft Options Background Generator</h1>
-    <form autocomplete="off">
+    <noscript><b>⚠️ You need to enable Javascript to use this tool.</b></noscript>
+    <form id="main-form" autocomplete="off">
         <label for="blocks">Select a texture to use for the background:</label>
         <select name="selected-texture" id="texture-selector" disabled></select>
         <button id="generate-pack" disabled>Generate pack!</button>
         <button hidden id="refresh-texture-list" type="button">Reload textures</button>
     </form>
-    <noscript><b>⚠️ You need to enable Javascript to use this tool.</b></noscript>
+
+    <h2>Settings</h2>
+    <form id="settings">
+        <label for="mc-version-selector">Minecraft version</label>
+        <select name="mc-version" id="mc-version-selector" disabled></select>
+    </form>
 
     <h2>Tips</h2>
     <ul>
