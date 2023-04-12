@@ -21,40 +21,50 @@
  */
 
 /**
- * A utility for asynchronously fetching JSON data
+ * @typedef {Object} SafeFetchOptions
+ * @property {string} [loadingText]
+ * @property {string} [failText]
+ * @property {(error: unknown) => void} [onFail]
+ * @property {Omit<ErrorOptions, "message">} [error]
+ * @property {boolean} [showError] Set to `true` if a failure would be important enough to display to the user
+ * @property {boolean} [disableForm] Set to `true` if a failure would prevent the app from continuing to function
+ */
+
+/**
+ * Wrapper for `fetch()` with loading messages and error handling built-in
  * @param {string} url
  * @param {RequestInit} [request]
- * @param {object} [options]
- * @param {string} [options.loadingText]
- * @param {string} [options.failText]
- * @param {(error: unknown) => void} [options.onFail]
- * @param {Omit<ErrorOptions, "message">} [options.error]
- * @param {boolean} [options.showError]
+ * @param {SafeFetchOptions} [options]
  */
-async function fetchJSON(url, options = {}, request) {
+async function safeFetch(url, options = {}, request) {
     const parsedUrl = new URL(url);
     const {
         loadingText,
         failText = `Failed to fetch ${parsedUrl.hostname}`,
         onFail,
         showError: shouldShowError = true,
-        error: errorOptions = {
-            // This should prevent the same request creating multiple errors:
-            id: parsedUrl.origin + parsedUrl.pathname + parsedUrl.search,
-            // Generic default category:
-            // category: "HTTP request",
-            extras: [`(${url})`],
-        },
+        disableForm: shouldDisableForm = true,
+        error,
     } = options;
+
+    const filename = parsedUrl.pathname.split("/").pop();
+    const errorOptions = {
+        // This should prevent the same request creating multiple errors:
+        id: parsedUrl.origin + parsedUrl.pathname + parsedUrl.search,
+        extras: [`(${filename || parsedUrl})`],
+        ...options.error,
+    };
+
+    const disabledForm = loadingText && disableForm?.(loadingText);
     try {
-        const disabledForm = loadingText && disableForm?.(loadingText);
         const response = await fetch(url.toString(), request);
         if (!response.ok) throw `${response.status} ${response.statusText}`;
-        const responseData = await response.json();
         disabledForm?.removePlaceholder();
-        return responseData;
+        return response;
     } catch (error) {
-        if (failText) disableForm?.(failText);
+        shouldDisableForm
+            ? disableForm?.(failText)
+            : disabledForm.removePlaceholder();
         if (shouldShowError) {
             let message = `HTTP request failed (${parsedUrl})`;
             if (error instanceof Error) message = error.message;
@@ -64,6 +74,25 @@ async function fetchJSON(url, options = {}, request) {
         onFail?.(error);
         throw error;
     }
+}
+
+/**
+ * A utility for asynchronously fetching JSON data
+ * @param {string} url
+ * @param {RequestInit} [request]
+ * @param {object} [options]
+ */
+function fetchJSON(url, options, request) {
+    /** @type {RequestInit} */
+    const requestInit = {
+        headers: {
+            ...request?.headers,
+            Accept: "application/json",
+        },
+        ...request,
+    };
+
+    return safeFetch(url, options, requestInit).then((res) => res.json());
 }
 
 /**
@@ -119,11 +148,22 @@ async function fetchTextureFileData(name) {
 
     const url = matchingFile.download_url;
 
-    const fileContent = await fetch(url, {
-        headers: {
-            Accept: "image/png",
+    const fileContent = await safeFetch(
+        url,
+        {
+            disableForm: false,
+            loadingText: "Downloading texture...",
+            error: {
+                tags: ["fetch-texture"],
+                category: "Downloading texture",
+            },
         },
-    }).then((res) => res.arrayBuffer());
+        {
+            headers: {
+                Accept: "image/png",
+            },
+        }
+    ).then((res) => res.arrayBuffer());
 
     return fileContent;
 }
@@ -426,9 +466,7 @@ async function generatePack(e) {
     const textureName = formData.get("selected-texture").toString();
     const textureFriendlyName = removeExtension(textureName);
 
-    const { removePlaceholder } = disableForm("Fetching texture...");
     const textureData = await fetchTextureFileData(textureName);
-    removePlaceholder();
     console.log(`Texture data for ${textureName}`, textureData);
 
     const metaFileData = JSON.stringify(
@@ -442,6 +480,9 @@ async function generatePack(e) {
             "assets/minecraft/textures/gui/options_background.png"
         ),
     ];
+
+    // We've successfully fetched a texture, so remove any old errors
+    removeErrors("fetch-texture");
 
     const { downloadZip } = await ClientZip;
     const zip = await downloadZip(files).arrayBuffer();
