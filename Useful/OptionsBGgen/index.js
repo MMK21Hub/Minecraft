@@ -405,7 +405,9 @@ async function loadSelectorContents() {
         }
     );
 
-    const textureFiles = textureDirContents.filter((f) => f.type === "file");
+    const textureFiles = textureDirContents.filter(
+        (f) => f.type === "file" && f.name.endsWith(".png")
+    );
     textureFileList = textureFiles;
     console.log(
         `Fetched data for ${textureFiles.length} textures from the mcmeta repository on GitHub`
