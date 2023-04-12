@@ -495,25 +495,6 @@ async function generatePack(e) {
     );
 }
 
-async function reloadTextureList() {
-    try {
-        await loadSelectorContents();
-    } catch (error) {
-        let message = "Couldn't load textures";
-        if (error instanceof Error) message = error.message;
-        if (typeof error === "string") message = error;
-
-        showError({
-            category: "Texture list",
-            message,
-            id: "load-selector-contents",
-            tags: ["texture-list"],
-        });
-
-        console.error("Failed to reload texture list:", error);
-    }
-}
-
 async function main() {
     // @ts-ignore
     ClientZip = import("https://unpkg.com/client-zip@2.3.1/index.js");
