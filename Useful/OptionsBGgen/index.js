@@ -51,7 +51,7 @@ async function safeFetch(url, options = {}, request) {
     const errorOptions = {
         // This should prevent the same request creating multiple errors:
         id: parsedUrl.origin + parsedUrl.pathname + parsedUrl.search,
-        extras: [`(${filename || parsedUrl})`],
+        extras: [parsedUrl.toString()],
         ...options.error,
     };
 
@@ -155,6 +155,7 @@ async function fetchTextureFileData(name) {
             loadingText: "Downloading texture...",
             error: {
                 tags: ["fetch-texture"],
+                extras: [name],
                 category: "Downloading texture",
             },
         },
@@ -326,12 +327,13 @@ function showError(options) {
     const duplicates = getErrors().filter((e) => e.dataset.id === id);
     duplicates.forEach((element) => element.remove());
 
+    const extrasPart = extras.length ? [" (", ...extras, ")"] : [""];
     const element = li(
         {
             "data-tags": tags?.join(" "),
             "data-id": id || "",
         },
-        [category && strong([category, ":"]), " ", message, " ", ...extras]
+        [category && strong([category, ":"]), " ", message, ...extrasPart]
     );
 
     errorList.append(element);
@@ -526,7 +528,7 @@ async function main() {
 
     loadSelectorContents();
     mainForm.addEventListener("submit", generatePack);
-    $("#refresh-texture-list").addEventListener("click", reloadTextureList);
+    $("#refresh-texture-list").addEventListener("click", loadSelectorContents);
 }
 
 async function fetchHyperscript() {
