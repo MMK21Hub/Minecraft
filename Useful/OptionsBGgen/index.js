@@ -453,7 +453,7 @@ function loadVersionSelector() {
 
     // Run a one-time update of the pack format input, to ensure that its initial state is correct
     // This ensures correct behaviour if "custom pack format" becomes selected on page load
-    updatePackFormatInput();
+    updateExtraControls();
 }
 
 /**
@@ -531,14 +531,19 @@ async function generatePack(e) {
 }
 
 /**
- * Updates the state of the pack format input. Triggered by the MC version selector changing.
+ * Updates the state of the extra controls.
+ * Extra controls are shown if MC version is set to "other"
+ * Triggered by the MC version selector changing.
  */
-function updatePackFormatInput() {
-    const container = $("#pack-format");
-    const input = /** @type {HTMLInputElement} */ ($("#pack-format-input"));
-    const shouldShowInput = versionSelector.value === "custom";
-    container.hidden = !shouldShowInput;
-    input.required = shouldShowInput;
+function updateExtraControls() {
+    const extraControlsContainer = $("#extra-controls");
+    const shouldShowControls = versionSelector.value === "custom";
+    extraControlsContainer.hidden = !shouldShowControls;
+
+    // All the controls are required (if shown)
+    extraControlsContainer.childNodes.forEach((element) => {
+        if ("required" in element) element.required = shouldShowControls;
+    });
 }
 
 /**
@@ -586,7 +591,7 @@ async function main() {
     mainForm.addEventListener("submit", generatePack);
     settings.addEventListener("submit", (e) => e.preventDefault());
     $("#refresh-texture-list").addEventListener("click", loadTextureSelector);
-    versionSelector.addEventListener("change", updatePackFormatInput);
+    versionSelector.addEventListener("change", updateExtraControls);
 }
 
 async function fetchHyperscript() {
