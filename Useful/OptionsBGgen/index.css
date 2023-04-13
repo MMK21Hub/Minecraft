@@ -30,6 +30,13 @@ select {
     max-width: 100%;
 }
 
+select,
+button,
+input {
+    width: 15em;
+    font-size: 0.85em;
+}
+
 @media (pointer: coarse) {
     select,
     button,
@@ -41,13 +48,7 @@ select {
 
     button {
         padding-inline: 1em;
-        flex-grow: 1;
-        max-width: 15em;
     }
-}
-
-form {
-    max-width: 70em;
 }
 
 .narrow-input {
@@ -57,20 +58,10 @@ form {
 #main-form {
     display: flex;
     gap: 0.5em;
-    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
+    flex-wrap: wrap;
 }
 
-.button-wrapper {
-    flex-grow: 1;
-    background-color: #54aa12;
-    display: flex;
-    justify-content: center;
-}
-
-@media screen and (min-width: 1000px) {
-    #main-form {
-        justify-content: start;
-    }
+#main-form > *:not(label) {
+    /* flex: 1 1 auto; */
 }
