@@ -448,11 +448,12 @@ function loadVersionSelector() {
             versionSelector.add(new Option(versionId, versionId))
         );
 
-    // for (let v in l) {
-    //     s.add(new Option(v));
-    // }
-
+    versionSelector.add(new Option("Custom pack format", "custom"));
     versionSelector.disabled = false;
+
+    // Run a one-time update of the pack format input, to ensure that its initial state is correct
+    // This ensures correct behaviour if "custom pack format" becomes selected on page load
+    updatePackFormatInput();
 }
 
 /**
@@ -464,7 +465,7 @@ function generatePackMetadata(texture) {
     return {
         pack: {
             description: `Use ${texture} as an options screen background`,
-            pack_format: 14, // TODO: Make this an option
+            pack_format: calculatePackFormat(),
         },
     };
 }
@@ -494,6 +495,10 @@ function promptForDownload(data, type, filename) {
 async function generatePack(e) {
     if (!(e.target instanceof HTMLFormElement)) return;
     e.preventDefault();
+
+    // Don't proceed any further if the settings are erroring
+    if (!settings.reportValidity()) return;
+
     const formData = new FormData(e.target);
     const textureName = formData.get("selected-texture").toString();
     const textureFriendlyName = removeExtension(textureName);
@@ -523,6 +528,27 @@ async function generatePack(e) {
         "application/zip",
         `Options Background ${textureFriendlyName}`
     );
+}
+
+/**
+ * Updates the state of the pack format input. Triggered by the MC version selector changing.
+ */
+function updatePackFormatInput() {
+    const container = $("#pack-format");
+    const input = /** @type {HTMLInputElement} */ ($("#pack-format-input"));
+    const shouldShowInput = versionSelector.value === "custom";
+    container.hidden = !shouldShowInput;
+    input.required = shouldShowInput;
+}
+
+/**
+ * Uses the selected MC version to look up the correct pack format
+ * @returns {number} A (hopefully) valid pack format
+ */
+function calculatePackFormat() {
+    const selectedVersion = versionSelector.value;
+    if (selectedVersion === "custom") return parseInt(packFormatInput.value);
+    return minecraftVersions()[selectedVersion];
 }
 
 /**
@@ -558,7 +584,9 @@ async function main() {
     loadTextureSelector();
     loadVersionSelector();
     mainForm.addEventListener("submit", generatePack);
+    settings.addEventListener("submit", (e) => e.preventDefault());
     $("#refresh-texture-list").addEventListener("click", loadTextureSelector);
+    versionSelector.addEventListener("change", updatePackFormatInput);
 }
 
 async function fetchHyperscript() {
@@ -603,11 +631,15 @@ let textureFileList;
 
 // ELEMENTS THAT ARE NEEDED IN THE GLOBAL SCOPE
 const mainForm = /** @type {HTMLFormElement} */ ($("#main-form"));
+const settings = /** @type {HTMLFormElement} */ ($("#settings"));
 const textureSelector = /** @type {HTMLSelectElement} */ (
     $("#texture-selector")
 );
 const versionSelector = /** @type {HTMLSelectElement} */ (
     $("#mc-version-selector")
+);
+const packFormatInput = /** @type {HTMLInputElement} */ (
+    $("#pack-format-input")
 );
 const errorList = /** @type {HTMLUListElement} */ ($("#error-list"));
 

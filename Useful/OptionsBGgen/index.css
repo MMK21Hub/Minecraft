@@ -32,9 +32,14 @@ select {
 
 @media (pointer: coarse) {
     select,
-    button {
+    button,
+    input {
         font-size: 1em;
         margin: 0.2em;
         padding: 0.2em;
     }
+}
+
+.narrow-input {
+    width: 5em;
 }

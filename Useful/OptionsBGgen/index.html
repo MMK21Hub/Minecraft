@@ -22,8 +22,12 @@
 
     <h2>Settings</h2>
     <form id="settings">
-        <label for="mc-version-selector">Minecraft version</label>
+        <label for="mc-version-selector">Minecraft version:</label>
         <select name="mc-version" id="mc-version-selector" disabled></select>
+        <div id="pack-format" hidden>
+            <label for="pack-format">Pack format:</label>
+            <input name="pack-format" id="pack-format-input" inputmode="numeric" pattern="\d*" class="narrow-input" placeholder="13">
+        </div>
     </form>
 
     <h2>Tips</h2>
