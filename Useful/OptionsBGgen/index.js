@@ -526,7 +526,7 @@ async function generatePack(e) {
     promptForDownload(
         zip,
         "application/zip",
-        `Options Background ${textureFriendlyName}`
+        `${textureFriendlyName} options background`
     );
 }
 
