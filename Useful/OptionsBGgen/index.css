@@ -38,8 +38,39 @@ select {
         margin: 0.2em;
         padding: 0.2em;
     }
+
+    button {
+        padding-inline: 1em;
+        flex-grow: 1;
+        max-width: 15em;
+    }
+}
+
+form {
+    max-width: 70em;
 }
 
 .narrow-input {
     width: 5em;
+}
+
+#main-form {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-wrapper {
+    flex-grow: 1;
+    background-color: #54aa12;
+    display: flex;
+    justify-content: center;
+}
+
+@media screen and (min-width: 1000px) {
+    #main-form {
+        justify-content: start;
+    }
 }
